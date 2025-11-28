@@ -5,12 +5,11 @@
  * Each hook has one specific purpose.
  */
 
-// Technology CRUD operations
+// Legacy technology CRUD operations (for backwards compatibility)
 export { 
   useTechnologies, 
   useTechnology, 
   useTechnologiesCount, 
-  useStageTechnology 
 } from './useTechnologies';
 
 // Staged changes operations
@@ -24,3 +23,19 @@ export {
 
 // Similarity check for duplicate prevention
 export { useSimilarityCheck } from './useSimilarityCheck';
+
+// D1CV (Portfolio) data operations
+export {
+  useD1CVTechnologies,
+  useD1CVTechnology,
+  useD1CVCategories,
+  useStageTechnology,
+} from './useD1CV';
+
+// AI Agent data operations
+export {
+  useAIAgentTechnologies,
+  useAIAgentTechnology,
+  useVectorizeStatus,
+  useVectorizeReindex,
+} from './useAIAgent';

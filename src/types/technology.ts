@@ -94,3 +94,49 @@ export interface TechnologiesCount {
   active: number;
   byCategory: Record<string, number>;
 }
+
+/**
+ * D1CV Technology entity from D1CV database
+ */
+export interface D1CVTechnology extends BaseTechnology {
+  id: number;
+  category_id?: number;
+  category?: string;
+  display_order?: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * AI Agent Technology entity from cv-ai-agent database
+ * Has additional AI enrichment fields
+ */
+export interface AIAgentTechnology extends BaseTechnology {
+  id: number;
+  stable_id: string;
+  category_id?: number;
+  category?: string;
+  // AI enrichment fields
+  summary?: string;
+  action?: string;
+  effect?: string;
+  outcome?: string;
+  related_project?: string;
+  employer?: string;
+  recency?: 'current' | 'recent' | 'legacy';
+  // Timestamps
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Vectorize index status
+ */
+export interface VectorizeStatus {
+  healthy: boolean;
+  indexName: string;
+  documentCount: number;
+  lastUpdated?: string;
+}
+

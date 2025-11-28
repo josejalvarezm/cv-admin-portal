@@ -26,15 +26,35 @@ import {
   Settings as SettingsIcon,
   GitHub as GitHubIcon,
   Language as LanguageIcon,
+  Storage as StorageIcon,
+  SmartToy as AIIcon,
+  Work as WorkIcon,
+  School as SchoolIcon,
+  Hub as VectorizeIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStagedChangesCount } from '@hooks/useStagedChanges';
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 280;
 
-const NAV_ITEMS = [
+interface NavItem {
+  text: string;
+  icon: React.ReactNode;
+  path: string;
+  showBadge?: boolean;
+  section?: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Technologies', icon: <CodeIcon />, path: '/technologies' },
+  // D1CV Section
+  { text: 'Technologies', icon: <CodeIcon />, path: '/d1cv/technologies', section: 'D1CV (Portfolio)' },
+  { text: 'Experience', icon: <WorkIcon />, path: '/d1cv/experience', section: 'D1CV (Portfolio)' },
+  { text: 'Education', icon: <SchoolIcon />, path: '/d1cv/education', section: 'D1CV (Portfolio)' },
+  // AI Agent Section  
+  { text: 'Technologies', icon: <CodeIcon />, path: '/ai-agent/technologies', section: 'AI Agent' },
+  { text: 'Vectorize', icon: <VectorizeIcon />, path: '/ai-agent/vectorize', section: 'AI Agent' },
+  // Staging & Settings
   { text: 'Staged Changes', icon: <SyncIcon />, path: '/staged', showBadge: true },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
@@ -72,39 +92,131 @@ export function Layout() {
       </Toolbar>
       <Divider />
       <List>
-        {NAV_ITEMS.map((item) => (
-          <ListItem key={item.text} disablePadding>
+        {/* Dashboard - standalone */}
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={location.pathname === '/dashboard'}
+            onClick={() => handleNavClick('/dashboard')}
+            sx={{
+              mx: 1,
+              borderRadius: 2,
+              '&.Mui-selected': {
+                backgroundColor: 'primary.light',
+                color: 'white',
+                '& .MuiListItemIcon-root': { color: 'white' },
+                '&:hover': { backgroundColor: 'primary.main' },
+              },
+            }}
+          >
+            <ListItemIcon><DashboardIcon /></ListItemIcon>
+            <ListItemText primary="Dashboard" />
+          </ListItemButton>
+        </ListItem>
+
+        {/* D1CV Section */}
+        <ListItem sx={{ pt: 2, pb: 0 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <StorageIcon fontSize="small" /> D1CV (Portfolio)
+          </Typography>
+        </ListItem>
+        {NAV_ITEMS.filter(item => item.section === 'D1CV (Portfolio)').map((item) => (
+          <ListItem key={item.path} disablePadding>
             <ListItemButton
-              selected={location.pathname.startsWith(item.path)}
+              selected={location.pathname === item.path}
               onClick={() => handleNavClick(item.path)}
               sx={{
                 mx: 1,
+                ml: 2,
                 borderRadius: 2,
                 '&.Mui-selected': {
                   backgroundColor: 'primary.light',
                   color: 'white',
-                  '& .MuiListItemIcon-root': {
-                    color: 'white',
-                  },
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                  },
+                  '& .MuiListItemIcon-root': { color: 'white' },
+                  '&:hover': { backgroundColor: 'primary.main' },
                 },
               }}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
-              {item.showBadge && stagedCount && stagedCount.pending > 0 && (
-                <Chip
-                  label={stagedCount.pending}
-                  size="small"
-                  color="warning"
-                  sx={{ ml: 1 }}
-                />
-              )}
             </ListItemButton>
           </ListItem>
         ))}
+
+        {/* AI Agent Section */}
+        <ListItem sx={{ pt: 2, pb: 0 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AIIcon fontSize="small" /> AI Agent
+          </Typography>
+        </ListItem>
+        {NAV_ITEMS.filter(item => item.section === 'AI Agent').map((item) => (
+          <ListItem key={item.path} disablePadding>
+            <ListItemButton
+              selected={location.pathname === item.path}
+              onClick={() => handleNavClick(item.path)}
+              sx={{
+                mx: 1,
+                ml: 2,
+                borderRadius: 2,
+                '&.Mui-selected': {
+                  backgroundColor: 'secondary.light',
+                  color: 'white',
+                  '& .MuiListItemIcon-root': { color: 'white' },
+                  '&:hover': { backgroundColor: 'secondary.main' },
+                },
+              }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+
+        <Divider sx={{ my: 2 }} />
+
+        {/* Staged Changes */}
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={location.pathname === '/staged'}
+            onClick={() => handleNavClick('/staged')}
+            sx={{
+              mx: 1,
+              borderRadius: 2,
+              '&.Mui-selected': {
+                backgroundColor: 'warning.light',
+                color: 'white',
+                '& .MuiListItemIcon-root': { color: 'white' },
+                '&:hover': { backgroundColor: 'warning.main' },
+              },
+            }}
+          >
+            <ListItemIcon><SyncIcon /></ListItemIcon>
+            <ListItemText primary="Staged Changes" />
+            {stagedCount && stagedCount.pending > 0 && (
+              <Chip label={stagedCount.pending} size="small" color="warning" sx={{ ml: 1 }} />
+            )}
+          </ListItemButton>
+        </ListItem>
+
+        {/* Settings */}
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={location.pathname === '/settings'}
+            onClick={() => handleNavClick('/settings')}
+            sx={{
+              mx: 1,
+              borderRadius: 2,
+              '&.Mui-selected': {
+                backgroundColor: 'primary.light',
+                color: 'white',
+                '& .MuiListItemIcon-root': { color: 'white' },
+                '&:hover': { backgroundColor: 'primary.main' },
+              },
+            }}
+          >
+            <ListItemIcon><SettingsIcon /></ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItemButton>
+        </ListItem>
       </List>
       <Divider sx={{ mt: 'auto' }} />
       <Box sx={{ p: 2 }}>

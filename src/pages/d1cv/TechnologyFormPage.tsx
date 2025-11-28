@@ -1,14 +1,8 @@
 /**
- * TechnologyFormPage - Refactored following SOLID principles
+ * D1CV Technology Form Page
  * 
- * SRP: This page now only orchestrates the form flow, delegating:
- *   - Similar tech alert → SimilarTechAlert component
- *   - Portfolio fields → PortfolioDataSection component
- *   - AI fields → AIEnrichmentSection component
- * 
- * OCP: New sections can be added without modifying this file
- * 
- * DIP: Uses hooks for data fetching (abstractions over API)
+ * Add/Edit technology for the D1CV (Portfolio) database.
+ * Changes are staged before being applied.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -20,11 +14,15 @@ import {
   Button,
   Stack,
   CircularProgress,
+  Card,
+  CardContent,
+  Alert,
+  Breadcrumbs,
+  Link,
 } from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import { Save as SaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 
-import { useTechnology } from '@hooks/useTechnologies';
-import { useStageTechnology } from '@hooks/useD1CV';
+import { useD1CVTechnology, useStageTechnology } from '@hooks/useD1CV';
 import { useSimilarityCheck } from '@hooks/useSimilarityCheck';
 import { getCategoryId } from '@/constants';
 import {
@@ -34,9 +32,6 @@ import {
 } from '@components/technology';
 import type { TechnologyFormData, SimilarTechnology } from '@/types';
 
-/**
- * Default form values - extracted for clarity and reuse
- */
 const DEFAULT_FORM_VALUES: TechnologyFormData = {
   name: '',
   category: '',
@@ -55,7 +50,7 @@ const DEFAULT_FORM_VALUES: TechnologyFormData = {
   recency: 'current',
 };
 
-export function TechnologyFormPage() {
+export function D1CVTechnologyFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -64,8 +59,8 @@ export function TechnologyFormPage() {
   const [aiExpanded, setAiExpanded] = useState(false);
   const [showSimilar, setShowSimilar] = useState(false);
 
-  // Data hooks (Dependency Inversion - depend on hook abstractions)
-  const { data: technology, isLoading: loadingTech } = useTechnology(id);
+  // Data hooks
+  const { data: technology, isLoading: loadingTech, error } = useD1CVTechnology(id);
   const { mutate: stageTechnology, isPending: staging } = useStageTechnology();
 
   // Form setup
@@ -79,14 +74,14 @@ export function TechnologyFormPage() {
     defaultValues: DEFAULT_FORM_VALUES,
   });
 
-  // Similarity check (only for new technologies)
+  // Similarity check
   const watchName = watch('name');
   const { data: similarTechs, isLoading: loadingSimilar } = useSimilarityCheck(
     watchName,
     { enabled: watchName.length >= 2 && !isEdit }
   );
 
-  // Populate form when editing existing technology
+  // Populate form when editing
   useEffect(() => {
     if (technology) {
       Object.entries(technology).forEach(([key, value]) => {
@@ -94,24 +89,16 @@ export function TechnologyFormPage() {
           setValue(key as keyof TechnologyFormData, value);
         }
       });
-      // Expand AI section if has AI data
-      if (technology.summary || technology.action) {
-        setAiExpanded(true);
-      }
     }
   }, [technology, setValue]);
 
-  // Show similar technologies alert when matches found
+  // Show similar technologies alert
   useEffect(() => {
     if (similarTechs && similarTechs.length > 0 && !isEdit) {
       setShowSimilar(true);
     }
   }, [similarTechs, isEdit]);
 
-  /**
-   * Handle form submission
-   * Builds separate payloads for D1CV and AI targets
-   */
   const onSubmit = useCallback((data: TechnologyFormData) => {
     const hasAiData = data.summary || data.action || data.effect || data.outcome;
 
@@ -148,9 +135,6 @@ export function TechnologyFormPage() {
     );
   }, [id, isEdit, stageTechnology, navigate]);
 
-  /**
-   * Handle using a similar technology's data
-   */
   const handleUseSimilar = useCallback((similar: SimilarTechnology) => {
     setValue('name', similar.name);
     if (similar.category) setValue('category', similar.category);
@@ -161,7 +145,6 @@ export function TechnologyFormPage() {
     setShowSimilar(false);
   }, [setValue]);
 
-  // Loading state for edit mode
   if (loadingTech && isEdit) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
@@ -170,15 +153,47 @@ export function TechnologyFormPage() {
     );
   }
 
+  if (error) {
+    return (
+      <Alert severity="error">
+        Failed to load technology: {error.message}
+      </Alert>
+    );
+  }
+
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+      {/* Breadcrumbs */}
+      <Breadcrumbs sx={{ mb: 2 }}>
+        <Link
+          component="button"
+          underline="hover"
+          color="inherit"
+          onClick={() => navigate('/d1cv/technologies')}
+        >
+          D1CV Technologies
+        </Link>
+        <Typography color="text.primary">
+          {isEdit ? 'Edit' : 'Add New'}
+        </Typography>
+      </Breadcrumbs>
+
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h4">
-          {isEdit ? 'Edit Technology' : 'Add Technology'}
-        </Typography>
+        <Box>
+          <Typography variant="h4">
+            {isEdit ? 'Edit Technology' : 'Add Technology'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Changes will be staged for review before applying to D1CV
+          </Typography>
+        </Box>
         <Stack direction="row" spacing={2}>
-          <Button variant="outlined" onClick={() => navigate(-1)}>
+          <Button
+            variant="outlined"
+            startIcon={<BackIcon />}
+            onClick={() => navigate('/d1cv/technologies')}
+          >
             Cancel
           </Button>
           <Button
@@ -202,19 +217,33 @@ export function TechnologyFormPage() {
       />
 
       {/* Portfolio Data Section */}
-      <PortfolioDataSection
-        control={control}
-        watch={watch}
-        errors={errors as Record<string, { message?: string }>}
-        loadingSimilar={loadingSimilar}
-      />
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            📦 Portfolio Data (D1CV)
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            This data appears on your portfolio website
+          </Typography>
+          <PortfolioDataSection
+            control={control}
+            watch={watch}
+            errors={errors as Record<string, { message?: string }>}
+            loadingSimilar={loadingSimilar}
+          />
+        </CardContent>
+      </Card>
 
       {/* AI Enrichment Section */}
-      <AIEnrichmentSection
-        control={control}
-        expanded={aiExpanded}
-        onToggleExpand={() => setAiExpanded(!aiExpanded)}
-      />
+      <Card>
+        <CardContent>
+          <AIEnrichmentSection
+            control={control}
+            expanded={aiExpanded}
+            onToggleExpand={() => setAiExpanded(!aiExpanded)}
+          />
+        </CardContent>
+      </Card>
     </Box>
   );
 }
