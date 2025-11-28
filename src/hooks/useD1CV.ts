@@ -1,7 +1,7 @@
 /**
- * D1CV Hooks - Fetch and manage D1CV (Portfolio) data
+ * Portfolio Data Hooks - Fetch and manage portfolio data
  * 
- * These hooks interact with cv-admin-worker which proxies to the D1CV API.
+ * These hooks interact with the admin API which proxies to backend services.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,27 +9,73 @@ import { apiClient } from '@services/api';
 import type { D1CVTechnology, StageRequest, StageResponse } from '@/types';
 import { sanitizeId } from '@utils/sanitize';
 
-interface D1CVTechnologiesResponse {
+// D1CV API returns this nested structure
+interface D1CVTechnologiesAPIResponse {
+  heroSkills?: D1CVTechnology[];
+  technologyCategories?: Array<{
+    name: string;
+    icon: string;
+    technologies: D1CVTechnology[];
+  }>;
+  // Also handle flat array or wrapped responses
   data?: D1CVTechnology[];
   technologies?: D1CVTechnology[];
 }
 
-function normalizeD1CVResponse(response: D1CVTechnology[] | D1CVTechnologiesResponse): D1CVTechnology[] {
+/**
+ * Normalize D1CV response to flat array of technologies
+ */
+function normalizeD1CVResponse(response: D1CVTechnology[] | D1CVTechnologiesAPIResponse): D1CVTechnology[] {
+  // Already an array
   if (Array.isArray(response)) {
     return response;
   }
+  
+  // Handle nested structure from D1CV v2 API
+  if (response.technologyCategories) {
+    const allTechs: D1CVTechnology[] = [];
+    
+    // Add hero skills
+    if (response.heroSkills) {
+      allTechs.push(...response.heroSkills);
+    }
+    
+    // Flatten category technologies
+    for (const category of response.technologyCategories) {
+      if (category.technologies) {
+        // Add category name to each tech
+        const techsWithCategory = category.technologies.map(tech => ({
+          ...tech,
+          category: category.name,
+        }));
+        allTechs.push(...techsWithCategory);
+      }
+    }
+    
+    return allTechs;
+  }
+  
+  // Handle wrapped responses
   return response.data || response.technologies || [];
 }
 
 /**
- * Fetch all technologies from D1CV
+ * Fetch all technologies from the portfolio database
  */
 export function useD1CVTechnologies() {
   return useQuery<D1CVTechnology[], Error>({
     queryKey: ['d1cv', 'technologies'],
     queryFn: async () => {
-      const response = await apiClient.get<D1CVTechnology[] | D1CVTechnologiesResponse>('/api/d1cv/technologies');
-      return normalizeD1CVResponse(response);
+      try {
+        const response = await apiClient.get<D1CVTechnology[] | D1CVTechnologiesAPIResponse>('/api/d1cv/technologies');
+        return normalizeD1CVResponse(response);
+      } catch (error) {
+        // Re-throw with user-friendly message (don't expose internal service names)
+        if (error instanceof Error) {
+          throw new Error(error.message);
+        }
+        throw new Error('Failed to load technologies');
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

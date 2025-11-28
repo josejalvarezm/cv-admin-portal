@@ -29,9 +29,8 @@ export class ApiClient implements IApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = endpoint.startsWith('/api')
-      ? endpoint
-      : `${this.baseUrl}${endpoint}`;
+    // Always use the base URL for API calls
+    const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
     // OWASP: Implement timeout to prevent hanging requests (DoS)
     const controller = new AbortController();
@@ -43,15 +42,24 @@ export class ApiClient implements IApiClient {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          // OWASP: Prevent MIME sniffing
-          'X-Content-Type-Options': 'nosniff',
           ...options.headers,
         },
-        // OWASP: Include Cloudflare Access cookies for authentication
+        // Include credentials for cross-origin requests
         credentials: 'include',
       });
 
       clearTimeout(timeoutId);
+
+      // Check if we got redirected to login page (HTML instead of JSON)
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        // User session expired or not authenticated
+        throw new ApiError(
+          'Session expired. Please refresh the page to log in again.',
+          401,
+          'AUTH_REQUIRED'
+        );
+      }
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Request failed' }));
@@ -59,6 +67,15 @@ export class ApiClient implements IApiClient {
           error.message || `HTTP ${response.status}`,
           response.status,
           error.code
+        );
+      }
+
+      // Verify response is JSON before parsing
+      if (!contentType.includes('application/json')) {
+        throw new ApiError(
+          'Invalid response format',
+          500,
+          'INVALID_RESPONSE'
         );
       }
 

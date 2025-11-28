@@ -156,7 +156,7 @@ export function D1CVTechnologyFormPage() {
   if (error) {
     return (
       <Alert severity="error">
-        Failed to load technology: {error.message}
+        {error.message}
       </Alert>
     );
   }
@@ -171,7 +171,7 @@ export function D1CVTechnologyFormPage() {
           color="inherit"
           onClick={() => navigate('/d1cv/technologies')}
         >
-          D1CV Technologies
+          Portfolio Technologies
         </Link>
         <Typography color="text.primary">
           {isEdit ? 'Edit' : 'Add New'}
@@ -185,7 +185,7 @@ export function D1CVTechnologyFormPage() {
             {isEdit ? 'Edit Technology' : 'Add Technology'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Changes will be staged for review before applying to D1CV
+            Changes will be staged for review before applying to Portfolio
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
@@ -220,7 +220,7 @@ export function D1CVTechnologyFormPage() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            📦 Portfolio Data (D1CV)
+            📦 Portfolio Data
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             This data appears on your portfolio website

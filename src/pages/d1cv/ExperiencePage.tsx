@@ -12,7 +12,7 @@ export function D1CVExperiencePage() {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        D1CV Experience
+        Portfolio Experience
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Work experience data from the portfolio database
@@ -27,13 +27,13 @@ export function D1CVExperiencePage() {
           <Typography color="text.secondary">
             Experience management will be available in a future update.
             <br />
-            Currently, experience data is managed via D1CV migrations.
+            Currently, experience data is managed via database migrations.
           </Typography>
         </CardContent>
       </Card>
 
       <Alert severity="info" sx={{ mt: 3 }}>
-        <strong>Current workflow:</strong> Edit experience data using SQL migrations in the D1CV repository.
+        <strong>Current workflow:</strong> Edit experience data using SQL migrations in the database repository.
       </Alert>
     </Box>
   );

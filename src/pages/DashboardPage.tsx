@@ -101,7 +101,7 @@ export function DashboardPage() {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Pending D1CV"
+            title="Pending Portfolio"
             value={stagedCount?.d1cvPending ?? 0}
             icon={<SyncIcon />}
             color="#ed6c02"

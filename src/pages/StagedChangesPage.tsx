@@ -133,7 +133,7 @@ export function StagedChangesPage() {
       {/* Summary Alert */}
       {(pendingD1CV.length > 0 || pendingAI.length > 0) && (
         <Alert severity="info" sx={{ mb: 3 }}>
-          You have {pendingD1CV.length} pending D1CV changes and {pendingAI.length} pending AI sync changes.
+          You have {pendingD1CV.length} pending portfolio changes and {pendingAI.length} pending AI sync changes.
         </Alert>
       )}
 
@@ -145,7 +145,7 @@ export function StagedChangesPage() {
               <Tab
                 label={
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <span>📦 D1CV Queue</span>
+                    <span>📦 Portfolio Queue</span>
                     {pendingD1CV.length > 0 && (
                       <Chip label={pendingD1CV.length} size="small" color="warning" />
                     )}
@@ -172,7 +172,7 @@ export function StagedChangesPage() {
                 disabled={pendingD1CV.length === 0 || applyingD1CV}
                 onClick={handleApplyD1CV}
               >
-                Apply to D1CV
+                Apply to Portfolio
               </Button>
             ) : (
               <Button

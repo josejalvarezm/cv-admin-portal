@@ -88,7 +88,7 @@ export function D1CVTechnologiesPage() {
     return (
       <Box>
         <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to load technologies from D1CV: {error.message}
+          {error.message}
         </Alert>
         <Button startIcon={<RefreshIcon />} onClick={() => refetch()}>
           Retry
@@ -101,7 +101,7 @@ export function D1CVTechnologiesPage() {
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Box>
-          <Typography variant="h4">D1CV Technologies</Typography>
+          <Typography variant="h4">Portfolio Technologies</Typography>
           <Typography variant="body2" color="text.secondary">
             Portfolio display data • {technologies.length} technologies
           </Typography>
@@ -176,7 +176,7 @@ export function D1CVTechnologiesPage() {
                   <TableRow>
                     <TableCell colSpan={8} align="center">
                       <Typography color="text.secondary" sx={{ py: 4 }}>
-                        {search ? 'No technologies match your search' : 'No technologies found in D1CV'}
+                        {search ? 'No technologies match your search' : 'No technologies found in portfolio'}
                       </Typography>
                     </TableCell>
                   </TableRow>
