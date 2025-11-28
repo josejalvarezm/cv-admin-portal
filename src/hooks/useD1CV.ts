@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@services/api';
-import type { D1CVTechnology, StageRequest, StageResponse } from '@/types';
+import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse } from '@/types';
 import { sanitizeId } from '@utils/sanitize';
 
 // D1CV API returns this nested structure
@@ -71,6 +71,28 @@ export function useD1CVTechnologies() {
         return normalizeD1CVResponse(response);
       } catch (error) {
         // Re-throw with user-friendly message (don't expose internal service names)
+        if (error instanceof Error) {
+          throw new Error(error.message);
+        }
+        throw new Error('Failed to load technologies');
+      }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch all technologies with AI Agent match status
+ * Returns technologies with hasAiMatch flag and aiMatch data
+ */
+export function useD1CVTechnologiesWithAIMatch() {
+  return useQuery<D1CVTechnologyWithAIMatch[], Error>({
+    queryKey: ['d1cv', 'technologies', 'with-ai-match'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get<TechnologiesWithAIMatchResponse>('/api/d1cv/technologies/with-ai-match');
+        return response.technologies || [];
+      } catch (error) {
         if (error instanceof Error) {
           throw new Error(error.message);
         }

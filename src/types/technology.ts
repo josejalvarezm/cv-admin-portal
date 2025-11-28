@@ -140,3 +140,24 @@ export interface VectorizeStatus {
   lastUpdated?: string;
 }
 
+/**
+ * D1CV Technology with AI match status
+ * Used for the technologies grid to show match/no match
+ */
+export interface D1CVTechnologyWithAIMatch extends D1CVTechnology {
+  hasAiMatch: boolean;
+  aiMatch: AIAgentTechnology | null;
+}
+
+/**
+ * Response from /api/d1cv/technologies/with-ai-match
+ */
+export interface TechnologiesWithAIMatchResponse {
+  technologies: D1CVTechnologyWithAIMatch[];
+  stats: {
+    total: number;
+    withAiMatch: number;
+    withoutAiMatch: number;
+  };
+}
+
