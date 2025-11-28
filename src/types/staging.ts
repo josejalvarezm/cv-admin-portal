@@ -51,6 +51,7 @@ export interface StagedChangesCount {
 export interface StageRequest {
   operation: StagedOperation;
   entityId?: number;
+  entityName?: string; // For D1CV technologies (identified by name, not ID)
   d1cvPayload: Record<string, unknown>;
   aiPayload?: Record<string, unknown>;
 }

@@ -107,7 +107,8 @@ export function D1CVTechnologiesPage() {
 
   const handleEdit = () => {
     if (selectedTech) {
-      navigate(`/d1cv/technologies/${selectedTech.id}`);
+      // Use URL-encoded name since D1CV doesn't have IDs in v2 API
+      navigate(`/d1cv/technologies/${encodeURIComponent(selectedTech.name)}`);
     }
     handleMenuClose();
   };
@@ -203,7 +204,6 @@ export function D1CVTechnologiesPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>Category</TableCell>
                   <TableCell>Experience</TableCell>
@@ -217,7 +217,7 @@ export function D1CVTechnologiesPage() {
               <TableBody>
                 {filteredTechnologies.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center">
+                    <TableCell colSpan={8} align="center">
                       <Typography color="text.secondary" sx={{ py: 4 }}>
                         {search ? 'No technologies match your search' : 'No technologies found in portfolio'}
                       </Typography>
@@ -226,16 +226,11 @@ export function D1CVTechnologiesPage() {
                 ) : (
                   paginatedTechnologies.map((tech: D1CVTechnologyWithAIMatch) => (
                     <TableRow
-                      key={tech.id}
+                      key={tech.name}
                       hover
                       sx={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/d1cv/technologies/${tech.id}`)}
+                      onClick={() => navigate(`/d1cv/technologies/${encodeURIComponent(tech.name)}`)}
                     >
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          #{tech.id}
-                        </Typography>
-                      </TableCell>
                       <TableCell>
                         <Typography fontWeight={600}>{tech.name}</Typography>
                       </TableCell>

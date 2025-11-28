@@ -7,7 +7,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@services/api';
 import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse } from '@/types';
-import { sanitizeId } from '@utils/sanitize';
 
 // D1CV API returns this nested structure
 interface D1CVTechnologiesAPIResponse {
@@ -104,15 +103,16 @@ export function useD1CVTechnologiesWithAIMatch() {
 }
 
 /**
- * Fetch a single technology from D1CV by ID
+ * Fetch a single technology from D1CV by name
+ * D1CV v2 API doesn't use IDs, so we identify technologies by name
  */
-export function useD1CVTechnology(id: string | undefined) {
-  const sanitizedId = id ? sanitizeId(id) : null;
+export function useD1CVTechnology(name: string | undefined) {
+  const encodedName = name ? encodeURIComponent(name) : null;
 
   return useQuery<D1CVTechnology, Error>({
-    queryKey: ['d1cv', 'technology', sanitizedId],
-    queryFn: () => apiClient.get(`/api/d1cv/technologies/${sanitizedId}`),
-    enabled: sanitizedId !== null,
+    queryKey: ['d1cv', 'technology', name],
+    queryFn: () => apiClient.get(`/api/d1cv/technologies/${encodedName}`),
+    enabled: encodedName !== null,
   });
 }
 
@@ -141,6 +141,7 @@ export function useStageTechnology() {
       operation: data.operation,
       entity_type: 'technology',
       entity_id: data.entityId,
+      entity_name: data.entityName, // For D1CV technologies (identified by name)
       d1cv_payload: data.d1cvPayload,
       ai_payload: data.aiPayload,
     }),

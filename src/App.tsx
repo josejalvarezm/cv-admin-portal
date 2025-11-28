@@ -23,7 +23,7 @@ function App() {
         {/* D1CV Routes */}
         <Route path="d1cv/technologies" element={<D1CVTechnologiesPage />} />
         <Route path="d1cv/technologies/new" element={<D1CVTechnologyFormPage />} />
-        <Route path="d1cv/technologies/:id" element={<D1CVTechnologyFormPage />} />
+        <Route path="d1cv/technologies/:name" element={<D1CVTechnologyFormPage />} />
         <Route path="d1cv/experience" element={<D1CVExperiencePage />} />
         <Route path="d1cv/education" element={<D1CVEducationPage />} />
         

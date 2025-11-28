@@ -51,16 +51,17 @@ const DEFAULT_FORM_VALUES: TechnologyFormData = {
 };
 
 export function D1CVTechnologyFormPage() {
-  const { id } = useParams<{ id: string }>();
+  const { name: techName } = useParams<{ name: string }>();
+  const decodedName = techName ? decodeURIComponent(techName) : undefined;
   const navigate = useNavigate();
-  const isEdit = Boolean(id);
+  const isEdit = Boolean(techName);
 
   // UI State
   const [aiExpanded, setAiExpanded] = useState(false);
   const [showSimilar, setShowSimilar] = useState(false);
 
-  // Data hooks
-  const { data: technology, isLoading: loadingTech, error } = useD1CVTechnology(id);
+  // Data hooks - use decoded name for lookup
+  const { data: technology, isLoading: loadingTech, error } = useD1CVTechnology(decodedName);
   const { mutate: stageTechnology, isPending: staging } = useStageTechnology();
 
   // Form setup
@@ -105,7 +106,7 @@ export function D1CVTechnologyFormPage() {
     stageTechnology(
       {
         operation: isEdit ? 'UPDATE' : 'INSERT',
-        entityId: id ? parseInt(id, 10) : undefined,
+        entityName: decodedName, // Use name instead of ID for updates
         d1cvPayload: {
           category_id: getCategoryId(data.category),
           name: data.name,
@@ -133,7 +134,7 @@ export function D1CVTechnologyFormPage() {
         },
       }
     );
-  }, [id, isEdit, stageTechnology, navigate]);
+  }, [decodedName, isEdit, stageTechnology, navigate]);
 
   const handleUseSimilar = useCallback((similar: SimilarTechnology) => {
     setValue('name', similar.name);

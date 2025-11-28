@@ -17,6 +17,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   Stack,
   TextField,
@@ -46,6 +47,8 @@ const RECENCY_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'defaul
 export function AIAgentTechnologiesPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   const { data: technologies = [], isLoading, error, refetch } = useAIAgentTechnologies();
 
   const filteredTechnologies = technologies.filter((tech: AIAgentTechnology) =>
@@ -53,6 +56,27 @@ export function AIAgentTechnologiesPage() {
     tech.category?.toLowerCase().includes(search.toLowerCase()) ||
     tech.stable_id?.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Reset to first page when search changes
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(0);
+  };
+
+  // Paginated data
+  const paginatedTechnologies = filteredTechnologies.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   if (error) {
     return (
@@ -108,7 +132,7 @@ export function AIAgentTechnologiesPage() {
             size="small"
             placeholder="Search by name, category, or stable_id..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -150,7 +174,7 @@ export function AIAgentTechnologiesPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTechnologies.map((tech: AIAgentTechnology) => (
+                  paginatedTechnologies.map((tech: AIAgentTechnology) => (
                     <TableRow
                       key={tech.stable_id || tech.id}
                       hover
@@ -219,6 +243,15 @@ export function AIAgentTechnologiesPage() {
             </Table>
           </TableContainer>
         )}
+        <TablePagination
+          component="div"
+          count={filteredTechnologies.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[15, 25, 50, 100]}
+        />
       </Card>
     </Box>
   );
