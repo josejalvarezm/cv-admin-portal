@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@services/api';
-import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse, AIAgentTechnology, ExperienceResponse, EducationResponse } from '@/types';
+import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse, AIAgentTechnology, ExperienceResponse, EducationResponse, ContactInfo, ProfileInfo, ContentSection } from '@/types';
 
 // D1CV API returns this nested structure
 interface D1CVTechnologiesAPIResponse {
@@ -207,6 +207,224 @@ export function useD1CVEducation() {
       return apiClient.get<EducationResponse>('/api/d1cv/education');
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch contact info from D1CV
+ */
+export function useD1CVContact() {
+  return useQuery<ContactInfo, Error>({
+    queryKey: ['d1cv', 'contact'],
+    queryFn: async () => {
+      return apiClient.get<ContactInfo>('/api/d1cv/contact');
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch profile info from D1CV
+ */
+export function useD1CVProfile() {
+  return useQuery<ProfileInfo, Error>({
+    queryKey: ['d1cv', 'profile'],
+    queryFn: async () => {
+      return apiClient.get<ProfileInfo>('/api/d1cv/profile');
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch content section (home, achievements) from D1CV
+ */
+export function useD1CVSection(sectionType: 'home' | 'achievements') {
+  return useQuery<ContentSection, Error>({
+    queryKey: ['d1cv', 'section', sectionType],
+    queryFn: async () => {
+      return apiClient.get<ContentSection>(`/api/d1cv/sections/${sectionType}`);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+// =============================================================================
+// EXPERIENCE MUTATIONS
+// =============================================================================
+
+export interface ExperienceInput {
+  company: string;
+  location?: string;
+  role: string;
+  period: string;
+  start_date?: string;
+  end_date?: string;
+  is_current?: boolean;
+  reporting_to?: string;
+  operating_level?: string;
+  description?: string;
+  technologies?: string;
+  display_order?: number;
+  categories?: Array<{
+    title: string;
+    display_order?: number;
+    achievements?: Array<{
+      title: string;
+      description: string;
+      display_order?: number;
+    }>;
+  }>;
+}
+
+export function useCreateExperience() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean; id: number }, Error, ExperienceInput>({
+    mutationFn: (data) => apiClient.post('/api/d1cv/experience', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'experience'] });
+    },
+  });
+}
+
+export function useUpdateExperience() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, { id: number; data: ExperienceInput }>({
+    mutationFn: ({ id, data }) => apiClient.put(`/api/d1cv/experience/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'experience'] });
+    },
+  });
+}
+
+export function useDeleteExperience() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, number>({
+    mutationFn: (id) => apiClient.delete(`/api/d1cv/experience/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'experience'] });
+    },
+  });
+}
+
+// =============================================================================
+// EDUCATION MUTATIONS
+// =============================================================================
+
+export interface EducationInput {
+  institution: string;
+  degree?: string;
+  location?: string;
+  start_year?: string;
+  end_year?: string;
+  description?: string;
+  display_order?: number;
+  focus_areas?: string[];
+}
+
+export function useCreateEducation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean; id: number }, Error, EducationInput>({
+    mutationFn: (data) => apiClient.post('/api/d1cv/education', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'education'] });
+    },
+  });
+}
+
+export function useUpdateEducation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, { id: number; data: EducationInput }>({
+    mutationFn: ({ id, data }) => apiClient.put(`/api/d1cv/education/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'education'] });
+    },
+  });
+}
+
+export function useDeleteEducation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, number>({
+    mutationFn: (id) => apiClient.delete(`/api/d1cv/education/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'education'] });
+    },
+  });
+}
+
+// =============================================================================
+// CONTACT MUTATIONS
+// =============================================================================
+
+export interface ContactInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  linkedin_url?: string;
+  github_url?: string;
+  portfolio_url?: string;
+  location?: string;
+  work_authorization?: string;
+  availability?: string;
+  work_preference?: string;
+}
+
+export function useUpdateContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, ContactInput>({
+    mutationFn: (data) => apiClient.put('/api/d1cv/contact', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'contact'] });
+    },
+  });
+}
+
+// =============================================================================
+// PROFILE MUTATIONS
+// =============================================================================
+
+export interface ProfileInput {
+  title?: string;
+  summary?: string;
+  key_achievements?: string[];
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, ProfileInput>({
+    mutationFn: (data) => apiClient.put('/api/d1cv/profile', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'profile'] });
+    },
+  });
+}
+
+// =============================================================================
+// CONTENT SECTION MUTATIONS (home, achievements)
+// =============================================================================
+
+export interface ContentSectionInput {
+  section_name?: string;
+  json_content: Record<string, unknown>;
+  display_order?: number;
+}
+
+export function useUpdateContentSection(sectionType: 'home' | 'achievements') {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, ContentSectionInput>({
+    mutationFn: (data) => apiClient.put(`/api/d1cv/sections/${sectionType}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['d1cv', 'section', sectionType] });
+    },
   });
 }
 

@@ -5,6 +5,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -30,24 +31,31 @@ import {
   List,
   ListItem,
   ListItemText,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
   ExpandMore as ExpandMoreIcon,
   Work as WorkIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { useD1CVExperience } from '@hooks/useD1CV';
+import { useD1CVExperience, useDeleteExperience } from '@hooks/useD1CV';
 import type { Experience } from '@/types';
 
 type SortField = 'company' | 'role' | 'period' | 'categories';
 type SortOrder = 'asc' | 'desc';
 
 export function D1CVExperiencePage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('period');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const { data, isLoading, error, refetch } = useD1CVExperience();
+  const deleteMutation = useDeleteExperience();
 
   const experiences = data?.experiences || [];
 
@@ -122,19 +130,24 @@ export function D1CVExperiencePage() {
             Work experience from D1CV database • {experiences.length} entries
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={() => refetch()}
-          disabled={isLoading}
-        >
-          Refresh
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/d1cv/experience/new')}
+          >
+            Add Experience
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            Refresh
+          </Button>
+        </Stack>
       </Stack>
-
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <strong>Note:</strong> Experience data is currently read-only. Editing will be available in a future update.
-      </Alert>
 
       {/* Search */}
       <Card sx={{ mb: 3 }}>
@@ -204,12 +217,13 @@ export function D1CVExperiencePage() {
                       Achievement Categories
                     </TableSortLabel>
                   </TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredAndSortedExperiences.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <Typography color="text.secondary" sx={{ py: 4 }}>
                         {search ? 'No experience matches your search' : 'No experience found'}
                       </Typography>
@@ -252,6 +266,29 @@ export function D1CVExperiencePage() {
                             />
                           )) || <Typography color="text.secondary">—</Typography>}
                         </Stack>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Edit">
+                          <IconButton
+                            size="small"
+                            onClick={() => navigate(`/d1cv/experience/${exp.id}`)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              if (window.confirm(`Delete experience at ${exp.company}?`)) {
+                                deleteMutation.mutate(exp.id!);
+                              }
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))

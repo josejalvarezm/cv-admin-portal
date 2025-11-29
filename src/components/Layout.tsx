@@ -31,6 +31,10 @@ import {
   Work as WorkIcon,
   School as SchoolIcon,
   Hub as VectorizeIcon,
+  Person as PersonIcon,
+  ContactMail as ContactIcon,
+  Home as HomeIcon,
+  EmojiEvents as AchievementsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStagedChangesCount } from '@hooks/useStagedChanges';
@@ -51,6 +55,10 @@ const NAV_ITEMS: NavItem[] = [
   { text: 'Technologies', icon: <CodeIcon />, path: '/d1cv/technologies', section: 'D1CV (Portfolio)' },
   { text: 'Experience', icon: <WorkIcon />, path: '/d1cv/experience', section: 'D1CV (Portfolio)' },
   { text: 'Education', icon: <SchoolIcon />, path: '/d1cv/education', section: 'D1CV (Portfolio)' },
+  { text: 'Contact', icon: <ContactIcon />, path: '/d1cv/contact', section: 'D1CV (Portfolio)' },
+  { text: 'Profile', icon: <PersonIcon />, path: '/d1cv/profile', section: 'D1CV (Portfolio)' },
+  { text: 'Home Section', icon: <HomeIcon />, path: '/d1cv/sections/home', section: 'D1CV (Portfolio)' },
+  { text: 'Achievements', icon: <AchievementsIcon />, path: '/d1cv/sections/achievements', section: 'D1CV (Portfolio)' },
   // AI Agent Section  
   { text: 'Technologies', icon: <CodeIcon />, path: '/ai-agent/technologies', section: 'AI Agent' },
   { text: 'Vectorize', icon: <VectorizeIcon />, path: '/ai-agent/vectorize', section: 'AI Agent' },

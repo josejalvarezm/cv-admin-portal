@@ -2,3 +2,8 @@ export { D1CVTechnologiesPage } from './TechnologiesPage';
 export { D1CVTechnologyFormPage } from './TechnologyFormPage';
 export { D1CVExperiencePage } from './ExperiencePage';
 export { D1CVEducationPage } from './EducationPage';
+export { ExperienceFormPage } from './ExperienceFormPage';
+export { EducationFormPage } from './EducationFormPage';
+export { ContactPage } from './ContactPage';
+export { ProfilePage } from './ProfilePage';
+export { ContentSectionPage } from './ContentSectionPage';

@@ -4,6 +4,7 @@
  * Displays education data from D1CV database using normalized tables.
  */
 
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -15,16 +16,23 @@ import {
   Stack,
   Chip,
   Divider,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
   School as SchoolIcon,
   LocationOn as LocationIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { useD1CVEducation } from '@hooks/useD1CV';
+import { useD1CVEducation, useDeleteEducation } from '@hooks/useD1CV';
 
 export function D1CVEducationPage() {
+  const navigate = useNavigate();
   const { data, isLoading, error, refetch } = useD1CVEducation();
+  const deleteMutation = useDeleteEducation();
 
   const education = data?.education;
 
@@ -50,19 +58,24 @@ export function D1CVEducationPage() {
             Education & certifications from the portfolio database
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={() => refetch()}
-          disabled={isLoading}
-        >
-          Refresh
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/d1cv/education/new')}
+          >
+            Add Education
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            Refresh
+          </Button>
+        </Stack>
       </Stack>
-
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <strong>Note:</strong> Education data is currently read-only. Editing will be available in a future update.
-      </Alert>
 
       {isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -86,14 +99,41 @@ export function D1CVEducationPage() {
             <Stack direction="row" spacing={2} alignItems="flex-start">
               <SchoolIcon color="primary" sx={{ fontSize: 40, mt: 0.5 }} />
               <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="h5" gutterBottom>
-                  {education.institution}
-                </Typography>
-                {education.degree && (
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {education.degree}
-                  </Typography>
-                )}
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  <Box>
+                    <Typography variant="h5" gutterBottom>
+                      {education.institution}
+                    </Typography>
+                    {education.degree && (
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        {education.degree}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Stack direction="row" spacing={0.5}>
+                    <Tooltip title="Edit">
+                      <IconButton
+                        size="small"
+                        onClick={() => navigate(`/d1cv/education/${education.id}`)}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => {
+                          if (window.confirm(`Delete education at ${education.institution}?`)) {
+                            deleteMutation.mutate(education.id!);
+                          }
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </Stack>
                 {education.location && (
                   <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 2 }}>
                     <LocationIcon fontSize="small" color="action" />
