@@ -47,7 +47,7 @@ const RECENCY_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'defaul
   legacy: 'warning',
 };
 
-type SortField = 'name' | 'category' | 'recency' | 'hasD1CVMatch';
+type SortField = 'stable_id' | 'name' | 'category' | 'recency' | 'hasOutcomes' | 'hasD1CVMatch';
 type SortOrder = 'asc' | 'desc';
 
 export function AIAgentTechnologiesPage() {
@@ -72,6 +72,10 @@ export function AIAgentTechnologiesPage() {
       let bVal: string | number | boolean = '';
 
       switch (sortField) {
+        case 'stable_id':
+          aVal = (a.stable_id || '').toLowerCase();
+          bVal = (b.stable_id || '').toLowerCase();
+          break;
         case 'name':
           aVal = a.name.toLowerCase();
           bVal = b.name.toLowerCase();
@@ -84,6 +88,13 @@ export function AIAgentTechnologiesPage() {
           const recencyOrder = { current: 3, recent: 2, legacy: 1 };
           aVal = recencyOrder[a.recency as keyof typeof recencyOrder] || 0;
           bVal = recencyOrder[b.recency as keyof typeof recencyOrder] || 0;
+          break;
+        case 'hasOutcomes':
+          // Count how many outcome fields are filled
+          const aOutcomes = (a.action ? 1 : 0) + (a.effect ? 1 : 0) + (a.outcome ? 1 : 0);
+          const bOutcomes = (b.action ? 1 : 0) + (b.effect ? 1 : 0) + (b.outcome ? 1 : 0);
+          aVal = aOutcomes;
+          bVal = bOutcomes;
           break;
         case 'hasD1CVMatch':
           aVal = a.hasD1CVMatch ? 1 : 0;
@@ -206,7 +217,15 @@ export function AIAgentTechnologiesPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Stable ID</TableCell>
+                  <TableCell sortDirection={sortField === 'stable_id' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'stable_id'}
+                      direction={sortField === 'stable_id' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('stable_id')}
+                    >
+                      Stable ID
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell sortDirection={sortField === 'name' ? sortOrder : false}>
                     <TableSortLabel
                       active={sortField === 'name'}
@@ -235,7 +254,15 @@ export function AIAgentTechnologiesPage() {
                     </TableSortLabel>
                   </TableCell>
                   <TableCell>Summary</TableCell>
-                  <TableCell>Has Outcomes</TableCell>
+                  <TableCell sortDirection={sortField === 'hasOutcomes' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'hasOutcomes'}
+                      direction={sortField === 'hasOutcomes' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('hasOutcomes')}
+                    >
+                      Has Outcomes
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell sortDirection={sortField === 'hasD1CVMatch' ? sortOrder : false}>
                     <TableSortLabel
                       active={sortField === 'hasD1CVMatch'}

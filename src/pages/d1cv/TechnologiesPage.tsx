@@ -58,7 +58,7 @@ const LEVEL_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'default'
   Beginner: 'default',
 };
 
-type SortField = 'name' | 'category' | 'level' | 'proficiency_percent' | 'hasAiMatch';
+type SortField = 'name' | 'category' | 'experience_years' | 'level' | 'proficiency_percent' | 'is_active' | 'hasAiMatch';
 type SortOrder = 'asc' | 'desc';
 
 export function D1CVTechnologiesPage() {
@@ -99,9 +99,17 @@ export function D1CVTechnologiesPage() {
           aVal = levelOrder[a.level as keyof typeof levelOrder] || 0;
           bVal = levelOrder[b.level as keyof typeof levelOrder] || 0;
           break;
+        case 'experience_years':
+          aVal = a.experience_years || 0;
+          bVal = b.experience_years || 0;
+          break;
         case 'proficiency_percent':
           aVal = a.proficiency_percent || 0;
           bVal = b.proficiency_percent || 0;
+          break;
+        case 'is_active':
+          aVal = a.is_active ? 1 : 0;
+          bVal = b.is_active ? 1 : 0;
           break;
         case 'hasAiMatch':
           aVal = a.hasAiMatch ? 1 : 0;
@@ -275,7 +283,15 @@ export function D1CVTechnologiesPage() {
                       Category
                     </TableSortLabel>
                   </TableCell>
-                  <TableCell>Experience</TableCell>
+                  <TableCell sortDirection={sortField === 'experience_years' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'experience_years'}
+                      direction={sortField === 'experience_years' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('experience_years')}
+                    >
+                      Experience
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell sortDirection={sortField === 'level' ? sortOrder : false}>
                     <TableSortLabel
                       active={sortField === 'level'}
@@ -294,7 +310,15 @@ export function D1CVTechnologiesPage() {
                       Proficiency
                     </TableSortLabel>
                   </TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell sortDirection={sortField === 'is_active' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'is_active'}
+                      direction={sortField === 'is_active' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('is_active')}
+                    >
+                      Status
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell sortDirection={sortField === 'hasAiMatch' ? sortOrder : false}>
                     <TableSortLabel
                       active={sortField === 'hasAiMatch'}
