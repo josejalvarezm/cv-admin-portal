@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 
-import { useD1CVTechnology, useStageTechnology } from '@hooks/useD1CV';
+import { useD1CVTechnologyWithAIMatch, useStageTechnology } from '@hooks/useD1CV';
 import { useSimilarityCheck } from '@hooks/useSimilarityCheck';
 import { getCategoryId } from '@/constants';
 import {
@@ -61,7 +61,7 @@ export function D1CVTechnologyFormPage() {
   const [showSimilar, setShowSimilar] = useState(false);
 
   // Data hooks - use decoded name for lookup
-  const { data: technology, isLoading: loadingTech, error } = useD1CVTechnology(decodedName);
+  const { data: technology, isLoading: loadingTech, error } = useD1CVTechnologyWithAIMatch(decodedName);
   const { mutate: stageTechnology, isPending: staging } = useStageTechnology();
 
   // Form setup
@@ -85,11 +85,30 @@ export function D1CVTechnologyFormPage() {
   // Populate form when editing
   useEffect(() => {
     if (technology) {
+      // Populate D1CV fields
       Object.entries(technology).forEach(([key, value]) => {
         if (key in DEFAULT_FORM_VALUES) {
           setValue(key as keyof TechnologyFormData, value);
         }
       });
+
+      // If there's AI match data, populate AI fields and auto-expand the section
+      if (technology.hasAiMatch && technology.aiMatch) {
+        const aiData = technology.aiMatch;
+        if (aiData.summary) setValue('summary', aiData.summary);
+        if (aiData.action) setValue('action', aiData.action);
+        if (aiData.effect) setValue('effect', aiData.effect);
+        if (aiData.outcome) setValue('outcome', aiData.outcome);
+        if (aiData.related_project) setValue('related_project', aiData.related_project);
+        if (aiData.employer) setValue('employer', aiData.employer);
+        if (aiData.recency) setValue('recency', aiData.recency);
+        
+        // Auto-expand AI section if there's AI data
+        const hasAnyAiField = aiData.summary || aiData.action || aiData.effect || aiData.outcome;
+        if (hasAnyAiField) {
+          setAiExpanded(true);
+        }
+      }
     }
   }, [technology, setValue]);
 

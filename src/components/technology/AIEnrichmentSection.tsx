@@ -40,7 +40,7 @@ export function AIEnrichmentSection({
     <Card>
       <CardHeader
         title="🤖 AI Enrichment"
-        subheader="Optional fields to improve chatbot responses"
+        subheader="Strongly suggested fields to improve chatbot responses"
         action={
           <IconButton onClick={onToggleExpand} aria-label={expanded ? 'Collapse' : 'Expand'}>
             {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}

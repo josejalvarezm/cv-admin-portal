@@ -87,9 +87,8 @@ export function AIAgentTechnologyDetailPage() {
             variant="contained"
             startIcon={<EditIcon />}
             onClick={() => {
-              // Find the D1CV ID and navigate to edit there
-              // For now, show an info message
-              alert('To edit AI enrichment data, edit the technology in D1CV Technologies');
+              // Navigate to D1CV edit page using URL-encoded technology name
+              navigate(`/d1cv/technologies/${encodeURIComponent(technology.name)}`);
             }}
           >
             Edit via D1CV

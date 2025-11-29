@@ -150,6 +150,15 @@ export interface D1CVTechnologyWithAIMatch extends D1CVTechnology {
 }
 
 /**
+ * AI Agent Technology with D1CV match status
+ * Used for the AI Agent technologies grid to show D1CV match status
+ */
+export interface AIAgentTechnologyWithD1CVMatch extends AIAgentTechnology {
+  hasD1CVMatch: boolean;
+  d1cvMatchName: string | null;
+}
+
+/**
  * Response from /api/d1cv/technologies/with-ai-match
  */
 export interface TechnologiesWithAIMatchResponse {

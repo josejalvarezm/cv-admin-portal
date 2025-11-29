@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@services/api';
-import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse } from '@/types';
+import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse, AIAgentTechnology } from '@/types';
 
 // D1CV API returns this nested structure
 interface D1CVTechnologiesAPIResponse {
@@ -112,6 +112,40 @@ export function useD1CVTechnology(name: string | undefined) {
   return useQuery<D1CVTechnology, Error>({
     queryKey: ['d1cv', 'technology', name],
     queryFn: () => apiClient.get(`/api/d1cv/technologies/${encodedName}`),
+    enabled: encodedName !== null,
+  });
+}
+
+/**
+ * Fetch a single D1CV technology with its AI Agent match data
+ * Returns the D1CV tech plus AI enrichment data if available
+ */
+export function useD1CVTechnologyWithAIMatch(name: string | undefined) {
+  const encodedName = name ? encodeURIComponent(name) : null;
+
+  return useQuery<D1CVTechnologyWithAIMatch, Error>({
+    queryKey: ['d1cv', 'technology', name, 'with-ai-match'],
+    queryFn: async () => {
+      // Fetch D1CV technology
+      const d1cvTech = await apiClient.get<D1CVTechnology>(`/api/d1cv/technologies/${encodedName}`);
+      
+      // Try to fetch matching AI Agent technology by name
+      let aiMatch: AIAgentTechnology | null = null;
+      try {
+        const aiResponse = await apiClient.get<AIAgentTechnology[]>('/api/ai-agent/technologies');
+        const normalizedAi = Array.isArray(aiResponse) ? aiResponse : 
+          ((aiResponse as { data?: AIAgentTechnology[] }).data || (aiResponse as { technologies?: AIAgentTechnology[] }).technologies || []);
+        aiMatch = normalizedAi.find(t => t.name.toLowerCase() === d1cvTech.name.toLowerCase()) || null;
+      } catch {
+        // AI Agent fetch failed, continue without AI match
+      }
+      
+      return {
+        ...d1cvTech,
+        hasAiMatch: Boolean(aiMatch),
+        aiMatch,
+      };
+    },
     enabled: encodedName !== null,
   });
 }

@@ -5,7 +5,7 @@
  * This shows the AI-enriched data used by the chatbot.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TableSortLabel,
   Chip,
   Stack,
   TextField,
@@ -31,12 +32,14 @@ import {
 import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
-  Info as InfoIcon,
+  Add as AddIcon,
   OpenInNew as OpenInNewIcon,
+  Link as LinkIcon,
+  LinkOff as LinkOffIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useAIAgentTechnologies } from '@hooks/useAIAgent';
-import type { AIAgentTechnology } from '@/types';
+import { useAIAgentTechnologiesWithD1CVMatch } from '@hooks/useAIAgent';
+import type { AIAgentTechnologyWithD1CVMatch } from '@/types';
 
 const RECENCY_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'default'> = {
   current: 'success',
@@ -44,18 +47,66 @@ const RECENCY_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'defaul
   legacy: 'warning',
 };
 
+type SortField = 'name' | 'category' | 'recency' | 'hasD1CVMatch';
+type SortOrder = 'asc' | 'desc';
+
 export function AIAgentTechnologiesPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(15);
-  const { data: technologies = [], isLoading, error, refetch } = useAIAgentTechnologies();
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const { data: technologies = [], isLoading, error, refetch } = useAIAgentTechnologiesWithD1CVMatch();
 
-  const filteredTechnologies = technologies.filter((tech: AIAgentTechnology) =>
-    tech.name.toLowerCase().includes(search.toLowerCase()) ||
-    tech.category?.toLowerCase().includes(search.toLowerCase()) ||
-    tech.stable_id?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAndSortedTechnologies = useMemo(() => {
+    let result = technologies.filter((tech: AIAgentTechnologyWithD1CVMatch) =>
+      tech.name.toLowerCase().includes(search.toLowerCase()) ||
+      tech.category?.toLowerCase().includes(search.toLowerCase()) ||
+      tech.stable_id?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: string | number | boolean = '';
+      let bVal: string | number | boolean = '';
+
+      switch (sortField) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          break;
+        case 'category':
+          aVal = (a.category || '').toLowerCase();
+          bVal = (b.category || '').toLowerCase();
+          break;
+        case 'recency':
+          const recencyOrder = { current: 3, recent: 2, legacy: 1 };
+          aVal = recencyOrder[a.recency as keyof typeof recencyOrder] || 0;
+          bVal = recencyOrder[b.recency as keyof typeof recencyOrder] || 0;
+          break;
+        case 'hasD1CVMatch':
+          aVal = a.hasD1CVMatch ? 1 : 0;
+          bVal = b.hasD1CVMatch ? 1 : 0;
+          break;
+      }
+
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [technologies, search, sortField, sortOrder]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   // Reset to first page when search changes
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +115,7 @@ export function AIAgentTechnologiesPage() {
   };
 
   // Paginated data
-  const paginatedTechnologies = filteredTechnologies.slice(
+  const paginatedTechnologies = filteredAndSortedTechnologies.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -109,13 +160,13 @@ export function AIAgentTechnologiesPage() {
           >
             Refresh
           </Button>
-          <Tooltip title="New technologies are added via the D1CV form with AI enrichment">
-            <span>
-              <Button variant="contained" disabled startIcon={<InfoIcon />}>
-                Add via D1CV
-              </Button>
-            </span>
-          </Tooltip>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/d1cv/technologies/new')}
+          >
+            Add via D1CV
+          </Button>
         </Stack>
       </Stack>
 
@@ -156,25 +207,58 @@ export function AIAgentTechnologiesPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Stable ID</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Recency</TableCell>
+                  <TableCell sortDirection={sortField === 'name' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'name'}
+                      direction={sortField === 'name' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('name')}
+                    >
+                      Name
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sortDirection={sortField === 'category' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'category'}
+                      direction={sortField === 'category' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('category')}
+                    >
+                      Category
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sortDirection={sortField === 'recency' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'recency'}
+                      direction={sortField === 'recency' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('recency')}
+                    >
+                      Recency
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell>Summary</TableCell>
                   <TableCell>Has Outcomes</TableCell>
+                  <TableCell sortDirection={sortField === 'hasD1CVMatch' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'hasD1CVMatch'}
+                      direction={sortField === 'hasD1CVMatch' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('hasD1CVMatch')}
+                    >
+                      D1CV Match
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredTechnologies.length === 0 ? (
+                {filteredAndSortedTechnologies.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={8} align="center">
                       <Typography color="text.secondary" sx={{ py: 4 }}>
                         {search ? 'No technologies match your search' : 'No technologies found in AI Agent database'}
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedTechnologies.map((tech: AIAgentTechnology) => (
+                  paginatedTechnologies.map((tech: AIAgentTechnologyWithD1CVMatch) => (
                     <TableRow
                       key={tech.stable_id || tech.id}
                       hover
@@ -225,6 +309,17 @@ export function AIAgentTechnologiesPage() {
                           )}
                         </Stack>
                       </TableCell>
+                      <TableCell>
+                        <Tooltip title={tech.hasD1CVMatch ? `Matched with: ${tech.d1cvMatchName}` : 'No match in D1CV'}>
+                          <Chip
+                            icon={tech.hasD1CVMatch ? <LinkIcon fontSize="small" /> : <LinkOffIcon fontSize="small" />}
+                            label={tech.hasD1CVMatch ? 'Match' : 'No match'}
+                            size="small"
+                            color={tech.hasD1CVMatch ? 'success' : 'default'}
+                            variant={tech.hasD1CVMatch ? 'filled' : 'outlined'}
+                          />
+                        </Tooltip>
+                      </TableCell>
                       <TableCell align="right">
                         <IconButton
                           size="small"
@@ -245,7 +340,7 @@ export function AIAgentTechnologiesPage() {
         )}
         <TablePagination
           component="div"
-          count={filteredTechnologies.length}
+          count={filteredAndSortedTechnologies.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}

@@ -6,7 +6,7 @@
  * Shows AI Agent match status for each technology.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -20,6 +20,7 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TableSortLabel,
   IconButton,
   Chip,
   Stack,
@@ -57,21 +58,73 @@ const LEVEL_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'default'
   Beginner: 'default',
 };
 
+type SortField = 'name' | 'category' | 'level' | 'proficiency_percent' | 'hasAiMatch';
+type SortOrder = 'asc' | 'desc';
+
 export function D1CVTechnologiesPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(15);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedTech, setSelectedTech] = useState<D1CVTechnologyWithAIMatch | null>(null);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiDialogData, setAiDialogData] = useState<AIAgentTechnology | null>(null);
   const { data: technologies = [], isLoading, error, refetch } = useD1CVTechnologiesWithAIMatch();
 
-  const filteredTechnologies = technologies.filter((tech: D1CVTechnologyWithAIMatch) =>
-    tech.name.toLowerCase().includes(search.toLowerCase()) ||
-    tech.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAndSortedTechnologies = useMemo(() => {
+    let result = technologies.filter((tech: D1CVTechnologyWithAIMatch) =>
+      tech.name.toLowerCase().includes(search.toLowerCase()) ||
+      tech.category?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: string | number | boolean = '';
+      let bVal: string | number | boolean = '';
+
+      switch (sortField) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          break;
+        case 'category':
+          aVal = (a.category || '').toLowerCase();
+          bVal = (b.category || '').toLowerCase();
+          break;
+        case 'level':
+          const levelOrder = { Expert: 4, Advanced: 3, Intermediate: 2, Beginner: 1 };
+          aVal = levelOrder[a.level as keyof typeof levelOrder] || 0;
+          bVal = levelOrder[b.level as keyof typeof levelOrder] || 0;
+          break;
+        case 'proficiency_percent':
+          aVal = a.proficiency_percent || 0;
+          bVal = b.proficiency_percent || 0;
+          break;
+        case 'hasAiMatch':
+          aVal = a.hasAiMatch ? 1 : 0;
+          bVal = b.hasAiMatch ? 1 : 0;
+          break;
+      }
+
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [technologies, search, sortField, sortOrder]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   // Reset to first page when search changes
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,7 +133,7 @@ export function D1CVTechnologiesPage() {
   };
 
   // Paginated data
-  const paginatedTechnologies = filteredTechnologies.slice(
+  const paginatedTechnologies = filteredAndSortedTechnologies.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -204,18 +257,58 @@ export function D1CVTechnologiesPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Category</TableCell>
+                  <TableCell sortDirection={sortField === 'name' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'name'}
+                      direction={sortField === 'name' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('name')}
+                    >
+                      Name
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sortDirection={sortField === 'category' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'category'}
+                      direction={sortField === 'category' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('category')}
+                    >
+                      Category
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell>Experience</TableCell>
-                  <TableCell>Level</TableCell>
-                  <TableCell>Proficiency</TableCell>
+                  <TableCell sortDirection={sortField === 'level' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'level'}
+                      direction={sortField === 'level' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('level')}
+                    >
+                      Level
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sortDirection={sortField === 'proficiency_percent' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'proficiency_percent'}
+                      direction={sortField === 'proficiency_percent' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('proficiency_percent')}
+                    >
+                      Proficiency
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>AI Agent</TableCell>
+                  <TableCell sortDirection={sortField === 'hasAiMatch' ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortField === 'hasAiMatch'}
+                      direction={sortField === 'hasAiMatch' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('hasAiMatch')}
+                    >
+                      AI Agent
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredTechnologies.length === 0 ? (
+                {filteredAndSortedTechnologies.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} align="center">
                       <Typography color="text.secondary" sx={{ py: 4 }}>
@@ -302,7 +395,7 @@ export function D1CVTechnologiesPage() {
         )}
         <TablePagination
           component="div"
-          count={filteredTechnologies.length}
+          count={filteredAndSortedTechnologies.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
