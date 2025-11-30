@@ -6,19 +6,20 @@
  */
 
 // Legacy technology CRUD operations (for backwards compatibility)
-export { 
-  useTechnologies, 
-  useTechnology, 
-  useTechnologiesCount, 
+export {
+  useTechnologies,
+  useTechnology,
+  useTechnologiesCount,
 } from './useTechnologies';
 
-// Staged changes operations
-export { 
-  useStagedChanges, 
-  useStagedChangesCount, 
-  useApplyD1CV, 
-  useApplyAI, 
-  useDeleteStagedChange 
+// Legacy staged changes operations (for backwards compatibility)
+export {
+  useStagedChanges,
+  useStagedChangesCount,
+  useApplyD1CV,
+  useApplyAI,
+  useDeleteStagedChange,
+  usePurgeD1CVCache,
 } from './useStagedChanges';
 
 // Similarity check for duplicate prevention
@@ -39,3 +40,31 @@ export {
   useVectorizeStatus,
   useVectorizeReindex,
 } from './useAIAgent';
+
+// Git-like commit workflow (v2)
+export {
+  useUncommittedChanges,
+  useCommits,
+  useCommitDetails,
+  useStagingStats,
+  useStageChange,
+  useDeleteStagedChange as useDeleteStagedChangeV2,
+  useCreateCommit,
+  usePushToD1CV,
+  usePushToAI,
+  type StagedChange,
+  type Commit,
+  type CommitWithChanges,
+  type StagingStats,
+  type Action,
+  type Target,
+  type EntityType,
+  type CommitStatus,
+} from './useCommits';
+
+// Real-time job status via WebSocket
+export {
+  useJobWebSocket,
+  useJobStatus,
+  type DOJobStatus,
+} from './useJobWebSocket';

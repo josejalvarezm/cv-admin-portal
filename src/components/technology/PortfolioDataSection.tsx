@@ -19,14 +19,16 @@ import {
   CircularProgress,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { CATEGORIES, TECHNOLOGY_LEVELS } from '@/constants';
-import type { TechnologyFormData } from '@/types';
+import { TECHNOLOGY_LEVELS } from '@/constants';
+import type { TechnologyFormData, TechnologyCategory } from '@/types';
 
 interface PortfolioDataSectionProps {
   control: Control<TechnologyFormData>;
   watch: UseFormWatch<TechnologyFormData>;
   errors: Record<string, { message?: string }>;
   loadingSimilar?: boolean;
+  categories?: TechnologyCategory[];
+  loadingCategories?: boolean;
 }
 
 export function PortfolioDataSection({
@@ -34,6 +36,8 @@ export function PortfolioDataSection({
   watch,
   errors,
   loadingSimilar = false,
+  categories = [],
+  loadingCategories = false,
 }: PortfolioDataSectionProps) {
   return (
     <Card sx={{ mb: 3 }}>
@@ -48,7 +52,7 @@ export function PortfolioDataSection({
             <Controller
               name="name"
               control={control}
-              rules={{ 
+              rules={{
                 required: 'Name is required',
                 maxLength: { value: 100, message: 'Name must be 100 characters or less' },
                 pattern: {
@@ -91,10 +95,18 @@ export function PortfolioDataSection({
                   required
                   error={Boolean(errors.category)}
                   helperText={errors.category?.message}
+                  disabled={loadingCategories}
+                  slotProps={{
+                    input: {
+                      endAdornment: loadingCategories && (
+                        <CircularProgress size={20} />
+                      ),
+                    },
+                  }}
                 >
-                  {CATEGORIES.map((cat) => (
-                    <MenuItem key={cat} value={cat}>
-                      {cat}
+                  {categories.map((cat) => (
+                    <MenuItem key={cat.id} value={cat.name}>
+                      {cat.name}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -114,10 +126,34 @@ export function PortfolioDataSection({
                 <TextField
                   {...field}
                   fullWidth
-                  label="Experience"
-                  placeholder="e.g., 3+ years"
+                  label="Experience Summary"
+                  placeholder="e.g., Built production APIs"
                   error={Boolean(errors.experience)}
                   helperText={errors.experience?.message}
+                />
+              )}
+            />
+          </Grid>
+
+          {/* Experience Years Field */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="experience_years"
+              control={control}
+              rules={{
+                min: { value: 0, message: 'Must be 0 or greater' },
+                max: { value: 50, message: 'Must be 50 or less' },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  fullWidth
+                  label="Years of Experience"
+                  slotProps={{ htmlInput: { min: 0, max: 50 } }}
+                  error={Boolean(errors.experience_years)}
+                  helperText={errors.experience_years?.message}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
                 />
               )}
             />

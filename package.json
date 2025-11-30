@@ -11,7 +11,17 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test --ignore-snapshots",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:prod": "cross-env TEST_ENV=production playwright test",
+    "test:e2e:codegen": "playwright codegen http://localhost:5173",
+    "test:manual": "playwright test tests/manual-helpers.spec.ts --headed --project=chromium",
+    "test:manual:add": "playwright test tests/manual-helpers.spec.ts -g \"Add NEW Technology\" --headed --project=chromium",
+    "test:manual:edit": "playwright test tests/manual-helpers.spec.ts -g \"Edit FIRST\" --headed --project=chromium",
+    "test:manual:workflow": "playwright test tests/manual-helpers.spec.ts -g \"Complete Workflow\" --headed --project=chromium"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -27,9 +37,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "cross-env": "^10.1.0",
     "eslint": "^9.13.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",

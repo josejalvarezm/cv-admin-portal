@@ -1,6 +1,16 @@
 // Technology domain types - Interface Segregation Principle (ISP)
 
 /**
+ * Technology category from D1CV database
+ */
+export interface TechnologyCategory {
+  id: number;
+  name: string;
+  icon: string;
+  display_order: number;
+}
+
+/**
  * Base technology fields shared across all contexts
  */
 export interface BaseTechnology {
@@ -147,6 +157,8 @@ export interface VectorizeStatus {
 export interface D1CVTechnologyWithAIMatch extends D1CVTechnology {
   hasAiMatch: boolean;
   aiMatch: AIAgentTechnology | null;
+  /** Indicates if the AI data came from staging (pending) vs production */
+  aiFromStaging?: boolean;
 }
 
 /**

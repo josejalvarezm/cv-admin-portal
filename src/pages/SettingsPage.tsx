@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -9,10 +10,48 @@ import {
   Stack,
   Divider,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  CircularProgress,
 } from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Delete as DeleteIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { useMutation } from '@tanstack/react-query';
+import { apiClient } from '@services/api';
 
 export function SettingsPage() {
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [reindexDialogOpen, setReindexDialogOpen] = useState(false);
+  const [resultMessage, setResultMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const clearStagedMutation = useMutation({
+    mutationFn: () => apiClient.delete<{ deleted?: { d1cv: number; ai: number } }>('/api/staged'),
+    onSuccess: (data) => {
+      setClearDialogOpen(false);
+      const d1cv = data.deleted?.d1cv ?? 0;
+      const ai = data.deleted?.ai ?? 0;
+      setResultMessage({ type: 'success', text: `Cleared ${d1cv + ai} staged changes (${d1cv} D1CV, ${ai} AI)` });
+    },
+    onError: (error: Error) => {
+      setClearDialogOpen(false);
+      setResultMessage({ type: 'error', text: error.message });
+    },
+  });
+
+  const reindexMutation = useMutation({
+    mutationFn: () => apiClient.post<{ success: boolean; message: string }>('/api/ai-agent/vectorize/reindex', {}),
+    onSuccess: () => {
+      setReindexDialogOpen(false);
+      setResultMessage({ type: 'success', text: 'Reindex triggered successfully. This will take ~5 minutes.' });
+    },
+    onError: (error: Error) => {
+      setReindexDialogOpen(false);
+      setResultMessage({ type: 'error', text: error.message });
+    },
+  });
+
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>
@@ -88,6 +127,15 @@ export function SettingsPage() {
             sx={{ color: 'error.main' }}
           />
           <CardContent>
+            {resultMessage && (
+              <Alert
+                severity={resultMessage.type}
+                sx={{ mb: 2 }}
+                onClose={() => setResultMessage(null)}
+              >
+                {resultMessage.text}
+              </Alert>
+            )}
             <Stack spacing={2}>
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
@@ -96,7 +144,13 @@ export function SettingsPage() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   Remove all pending staged changes. This cannot be undone.
                 </Typography>
-                <Button variant="outlined" color="error" size="small">
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => setClearDialogOpen(true)}
+                >
                   Clear Staged
                 </Button>
               </Box>
@@ -108,7 +162,13 @@ export function SettingsPage() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   Trigger a full re-index of all technologies in the AI Agent. Takes ~5 minutes.
                 </Typography>
-                <Button variant="outlined" color="error" size="small">
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  startIcon={<RefreshIcon />}
+                  onClick={() => setReindexDialogOpen(true)}
+                >
                   Force Re-index
                 </Button>
               </Box>
@@ -116,6 +176,56 @@ export function SettingsPage() {
           </CardContent>
         </Card>
       </Stack>
+
+      {/* Clear Staged Confirmation Dialog */}
+      <Dialog open={clearDialogOpen} onClose={() => !clearStagedMutation.isPending && setClearDialogOpen(false)}>
+        <DialogTitle>Clear All Staged Changes?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will permanently remove all pending staged changes from both the D1CV and AI Agent queues.
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClearDialogOpen(false)} disabled={clearStagedMutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => clearStagedMutation.mutate()}
+            color="error"
+            variant="contained"
+            disabled={clearStagedMutation.isPending}
+            startIcon={clearStagedMutation.isPending ? <CircularProgress size={20} /> : <DeleteIcon />}
+          >
+            Clear All
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reindex Confirmation Dialog */}
+      <Dialog open={reindexDialogOpen} onClose={() => !reindexMutation.isPending && setReindexDialogOpen(false)}>
+        <DialogTitle>Force Re-index AI Agent?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will trigger a full re-index of all technologies in the AI Agent's vector database.
+            This process takes approximately 5 minutes and will regenerate all embeddings.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReindexDialogOpen(false)} disabled={reindexMutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => reindexMutation.mutate()}
+            color="error"
+            variant="contained"
+            disabled={reindexMutation.isPending}
+            startIcon={reindexMutation.isPending ? <CircularProgress size={20} /> : <RefreshIcon />}
+          >
+            Start Re-index
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

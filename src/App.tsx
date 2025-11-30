@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '@components/Layout';
 import { DashboardPage } from '@pages/DashboardPage';
 import { StagedChangesPage } from '@pages/StagedChangesPage';
+import { CommitsPage } from '@pages/CommitsPage';
 import { SettingsPage } from '@pages/SettingsPage';
 // D1CV Pages
 import { D1CVTechnologiesPage } from '@pages/d1cv/TechnologiesPage';
@@ -24,7 +25,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        
+
         {/* D1CV Routes */}
         <Route path="d1cv/technologies" element={<D1CVTechnologiesPage />} />
         <Route path="d1cv/technologies/new" element={<D1CVTechnologyFormPage />} />
@@ -38,16 +39,17 @@ function App() {
         <Route path="d1cv/contact" element={<ContactPage />} />
         <Route path="d1cv/profile" element={<ProfilePage />} />
         <Route path="d1cv/sections/:sectionType" element={<ContentSectionPage />} />
-        
+
         {/* AI Agent Routes */}
         <Route path="ai-agent/technologies" element={<AIAgentTechnologiesPage />} />
         <Route path="ai-agent/technologies/:stableId" element={<AIAgentTechnologyDetailPage />} />
         <Route path="ai-agent/vectorize" element={<AIAgentVectorizePage />} />
-        
+
         {/* Staging & Settings */}
         <Route path="staged" element={<StagedChangesPage />} />
+        <Route path="commits" element={<CommitsPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        
+
         {/* Legacy redirect */}
         <Route path="technologies" element={<Navigate to="/d1cv/technologies" replace />} />
         <Route path="technologies/*" element={<Navigate to="/d1cv/technologies" replace />} />

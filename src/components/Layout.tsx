@@ -35,6 +35,7 @@ import {
   ContactMail as ContactIcon,
   Home as HomeIcon,
   EmojiEvents as AchievementsIcon,
+  Commit as CommitIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStagedChangesCount } from '@hooks/useStagedChanges';
@@ -64,6 +65,7 @@ const NAV_ITEMS: NavItem[] = [
   { text: 'Vectorize', icon: <VectorizeIcon />, path: '/ai-agent/vectorize', section: 'AI Agent' },
   // Staging & Settings
   { text: 'Staged Changes', icon: <SyncIcon />, path: '/staged', showBadge: true },
+  { text: 'Commits', icon: <CommitIcon />, path: '/commits' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

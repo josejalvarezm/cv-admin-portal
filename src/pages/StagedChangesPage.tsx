@@ -32,8 +32,9 @@ import {
   PlayArrow as ApplyIcon,
   SyncAlt as SyncIcon,
   Visibility as ViewIcon,
+  ClearAll as ClearCacheIcon,
 } from '@mui/icons-material';
-import { useStagedChanges, useApplyD1CV, useApplyAI } from '@hooks/useStagedChanges';
+import { useStagedChanges, useApplyD1CV, useApplyAI, usePurgeD1CVCache } from '@hooks/useStagedChanges';
 import type { StagedChange } from '@/types';
 
 interface TabPanelProps {
@@ -67,10 +68,13 @@ export function StagedChangesPage() {
   const [tab, setTab] = useState(0);
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ step: number; message: string } | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedChange, setSelectedChange] = useState<StagedChange | null>(null);
 
   const { data: stagedChanges, isLoading, refetch } = useStagedChanges();
   const { mutate: applyD1CV, isPending: applyingD1CV } = useApplyD1CV();
   const { mutate: applyAI, isPending: applyingAI } = useApplyAI();
+  const { mutate: purgeCache, isPending: purgingCache } = usePurgeD1CVCache();
 
   const d1cvChanges = stagedChanges?.d1cv || [];
   const aiChanges = stagedChanges?.ai || [];
@@ -85,13 +89,18 @@ export function StagedChangesPage() {
     });
   };
 
+  const handleViewDetails = (change: StagedChange) => {
+    setSelectedChange(change);
+    setDetailsDialogOpen(true);
+  };
+
   const handleSyncAI = () => {
     setSyncDialogOpen(true);
   };
 
   const confirmSyncAI = () => {
     setSyncProgress({ step: 1, message: 'Applying changes to D1...' });
-    
+
     applyAI(undefined, {
       onSuccess: () => {
         setSyncProgress(null);
@@ -121,13 +130,24 @@ export function StagedChangesPage() {
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h4">Staged Changes</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={() => refetch()}
-        >
-          Refresh
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            color="warning"
+            startIcon={purgingCache ? <CircularProgress size={20} /> : <ClearCacheIcon />}
+            onClick={() => purgeCache()}
+            disabled={purgingCache}
+          >
+            Refresh Portfolio Cache
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={() => refetch()}
+          >
+            Refresh
+          </Button>
+        </Stack>
       </Stack>
 
       {/* Summary Alert */}
@@ -190,7 +210,7 @@ export function StagedChangesPage() {
         <CardContent>
           {/* D1CV Tab */}
           <TabPanel value={tab} index={0}>
-            <StagedTable changes={d1cvChanges} showReindex={false} />
+            <StagedTable changes={d1cvChanges} showReindex={false} onViewDetails={handleViewDetails} />
           </TabPanel>
 
           {/* AI Tab */}
@@ -199,7 +219,7 @@ export function StagedChangesPage() {
               AI sync is resource-intensive. It generates embeddings and updates the vector index.
               Only sync when you have accumulated changes.
             </Alert>
-            <StagedTable changes={aiChanges} showReindex />
+            <StagedTable changes={aiChanges} showReindex onViewDetails={handleViewDetails} />
           </TabPanel>
         </CardContent>
       </Card>
@@ -257,6 +277,62 @@ export function StagedChangesPage() {
           )}
         </DialogActions>
       </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog
+        open={detailsDialogOpen}
+        onClose={() => setDetailsDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedChange && (
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Typography variant="h6">
+                {OP_ICONS[selectedChange.operation]} {selectedChange.operation} {selectedChange.entity_type}
+              </Typography>
+              <Chip
+                label={selectedChange.status}
+                size="small"
+                color={STATUS_COLORS[selectedChange.status] || 'default'}
+              />
+            </Stack>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          {selectedChange && (
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Staged: {new Date(selectedChange.created_at).toLocaleString()}
+              </Typography>
+              {selectedChange.stable_id && (
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  <strong>Stable ID:</strong> {selectedChange.stable_id}
+                </Typography>
+              )}
+              <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                Payload:
+              </Typography>
+              <Box
+                component="pre"
+                sx={{
+                  bgcolor: 'grey.100',
+                  p: 2,
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  fontSize: '0.875rem',
+                  maxHeight: 400,
+                }}
+              >
+                {JSON.stringify(selectedChange.payload, null, 2)}
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -264,9 +340,10 @@ export function StagedChangesPage() {
 interface StagedTableProps {
   changes: StagedChange[];
   showReindex: boolean;
+  onViewDetails: (change: StagedChange) => void;
 }
 
-function StagedTable({ changes, showReindex }: StagedTableProps) {
+function StagedTable({ changes, showReindex, onViewDetails }: StagedTableProps) {
   if (changes.length === 0) {
     return (
       <Box sx={{ py: 4, textAlign: 'center' }}>
@@ -323,7 +400,7 @@ function StagedTable({ changes, showReindex }: StagedTableProps) {
                 </Typography>
               </TableCell>
               <TableCell align="right">
-                <IconButton size="small" title="View details">
+                <IconButton size="small" title="View details" onClick={() => onViewDetails(change)}>
                   <ViewIcon fontSize="small" />
                 </IconButton>
                 {change.status === 'pending' && (

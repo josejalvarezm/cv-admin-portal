@@ -7,6 +7,7 @@
  * - useApplyD1CV: Apply changes to D1CV database
  * - useApplyAI: Apply changes to AI agent (triggers reindex)
  * - useDeleteStagedChange: Remove a staged change
+ * - usePurgeD1CVCache: Manually purge D1CV cache
  * 
  * OWASP: All operations go through authenticated API endpoints
  */
@@ -15,6 +16,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@services/api';
 import type { StagedChangesResponse, StagedChangesCount, ApplyResponse } from '@/types';
 import { sanitizeId } from '@utils/sanitize';
+
+interface CachePurgeResponse {
+  success: boolean;
+  message: string;
+  purged: number;
+}
 
 /**
  * Fetch all staged changes (both D1CV and AI queues)
@@ -92,6 +99,16 @@ export function useDeleteStagedChange() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staged'] });
     },
+  });
+}
+
+/**
+ * Manually purge the D1CV cache
+ * Use this to force the portfolio to fetch fresh data
+ */
+export function usePurgeD1CVCache() {
+  return useMutation<CachePurgeResponse, Error, void>({
+    mutationFn: () => apiClient.post('/api/d1cv/cache/purge', {}),
   });
 }
 

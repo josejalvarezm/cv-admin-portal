@@ -1,5 +1,6 @@
 export { DashboardPage } from './DashboardPage';
 export { StagedChangesPage } from './StagedChangesPage';
+export { CommitsPage } from './CommitsPage';
 export { SettingsPage } from './SettingsPage';
 
 // Legacy exports (redirected to D1CV)

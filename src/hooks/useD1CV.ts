@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@services/api';
-import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse, AIAgentTechnology, ExperienceResponse, EducationResponse, ContactInfo, ProfileInfo, ContentSection } from '@/types';
+import type { D1CVTechnology, StageRequest, StageResponse, D1CVTechnologyWithAIMatch, TechnologiesWithAIMatchResponse, AIAgentTechnology, ExperienceResponse, EducationResponse, ContactInfo, ProfileInfo, ContentSection, TechnologyCategory } from '@/types';
 
 // D1CV API returns this nested structure
 interface D1CVTechnologiesAPIResponse {
@@ -49,18 +49,18 @@ function normalizeD1CVResponse(response: D1CVTechnology[] | D1CVTechnologiesAPIR
   if (Array.isArray(response)) {
     return response.map(tech => normalizeTech(tech as unknown as Record<string, unknown>));
   }
-  
+
   // Handle nested structure from D1CV v2 API
   if (response.technologyCategories) {
     const allTechs: D1CVTechnology[] = [];
-    
+
     // Add hero skills (also need normalization)
     if (response.heroSkills) {
       for (const skill of response.heroSkills) {
         allTechs.push(normalizeTech(skill as unknown as Record<string, unknown>, 'Hero Skills'));
       }
     }
-    
+
     // Flatten category technologies
     for (const category of response.technologyCategories) {
       if (category.technologies) {
@@ -69,10 +69,10 @@ function normalizeD1CVResponse(response: D1CVTechnology[] | D1CVTechnologiesAPIR
         }
       }
     }
-    
+
     return allTechs;
   }
-  
+
   // Handle wrapped responses
   const techs = response.data || response.technologies || [];
   return techs.map(tech => normalizeTech(tech as unknown as Record<string, unknown>));
@@ -97,6 +97,28 @@ export function useD1CVTechnologies() {
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch technology categories from D1CV database
+ * Used by forms to populate category dropdowns with real DB data
+ */
+export function useD1CVCategories() {
+  return useQuery<TechnologyCategory[], Error>({
+    queryKey: ['d1cv', 'categories'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get<TechnologyCategory[]>('/api/d1cv/categories');
+        return response;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw new Error(error.message);
+        }
+        throw new Error('Failed to load categories');
+      }
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutes - categories rarely change
   });
 }
 
@@ -137,8 +159,34 @@ export function useD1CVTechnology(name: string | undefined) {
 }
 
 /**
+ * Staged AI data response from the API
+ */
+interface StagedAIResponse {
+  found: boolean;
+  hasAIData: boolean;
+  d1cv_staged_id?: number;
+  ai_staged_id?: number;
+  stable_id?: string;
+  operation?: string;
+  aiData?: {
+    summary?: string;
+    action?: string;
+    effect?: string;
+    outcome?: string;
+    related_project?: string;
+    employer?: string;
+    recency?: string;
+  };
+  message?: string;
+}
+
+/**
  * Fetch a single D1CV technology with its AI Agent match data
  * Returns the D1CV tech plus AI enrichment data if available
+ * 
+ * Priority for AI data:
+ * 1. Check staged AI data (for pending changes not yet applied)
+ * 2. Check production AI Agent database
  */
 export function useD1CVTechnologyWithAIMatch(name: string | undefined) {
   const encodedName = name ? encodeURIComponent(name) : null;
@@ -148,22 +196,58 @@ export function useD1CVTechnologyWithAIMatch(name: string | undefined) {
     queryFn: async () => {
       // Fetch D1CV technology
       const d1cvTech = await apiClient.get<D1CVTechnology>(`/api/d1cv/technologies/${encodedName}`);
-      
-      // Try to fetch matching AI Agent technology by name
+
+      // First, check for staged AI data (pending changes not yet applied)
       let aiMatch: AIAgentTechnology | null = null;
+      let fromStaging = false;
+
       try {
-        const aiResponse = await apiClient.get<AIAgentTechnology[]>('/api/ai-agent/technologies');
-        const normalizedAi = Array.isArray(aiResponse) ? aiResponse : 
-          ((aiResponse as { data?: AIAgentTechnology[] }).data || (aiResponse as { technologies?: AIAgentTechnology[] }).technologies || []);
-        aiMatch = normalizedAi.find(t => t.name.toLowerCase() === d1cvTech.name.toLowerCase()) || null;
+        const stagedAI = await apiClient.get<StagedAIResponse>(`/api/staged/ai-by-name/${encodedName}`);
+        if (stagedAI.found && stagedAI.hasAIData && stagedAI.aiData) {
+          // Convert staged AI data to AIAgentTechnology format
+          // Include base tech fields from the D1CV record
+          const recencyValue = stagedAI.aiData.recency as 'current' | 'recent' | 'legacy' | undefined;
+          aiMatch = {
+            id: 0, // Staged, not yet in DB
+            name: d1cvTech.name,
+            stable_id: stagedAI.stable_id || '',
+            // Base technology fields from D1CV
+            experience: d1cvTech.experience,
+            experience_years: d1cvTech.experience_years,
+            proficiency_percent: d1cvTech.proficiency_percent,
+            level: d1cvTech.level,
+            // AI enrichment fields from staging
+            summary: stagedAI.aiData.summary || '',
+            action: stagedAI.aiData.action || '',
+            effect: stagedAI.aiData.effect || '',
+            outcome: stagedAI.aiData.outcome || '',
+            related_project: stagedAI.aiData.related_project || '',
+            employer: stagedAI.aiData.employer || '',
+            recency: recencyValue || 'current',
+          };
+          fromStaging = true;
+        }
       } catch {
-        // AI Agent fetch failed, continue without AI match
+        // Staged AI fetch failed, continue to check production
       }
-      
+
+      // If no staged data, try to fetch from production AI Agent database
+      if (!aiMatch) {
+        try {
+          const aiResponse = await apiClient.get<AIAgentTechnology[]>('/api/ai-agent/technologies');
+          const normalizedAi = Array.isArray(aiResponse) ? aiResponse :
+            ((aiResponse as { data?: AIAgentTechnology[] }).data || (aiResponse as { technologies?: AIAgentTechnology[] }).technologies || []);
+          aiMatch = normalizedAi.find(t => t.name.toLowerCase() === d1cvTech.name.toLowerCase()) || null;
+        } catch {
+          // AI Agent fetch failed, continue without AI match
+        }
+      }
+
       return {
         ...d1cvTech,
         hasAiMatch: Boolean(aiMatch),
         aiMatch,
+        aiFromStaging: fromStaging, // New field to indicate source
       };
     },
     enabled: encodedName !== null,
@@ -171,16 +255,243 @@ export function useD1CVTechnologyWithAIMatch(name: string | undefined) {
 }
 
 /**
- * Fetch categories from D1CV
+ * Response from staged technology endpoint
  */
-export function useD1CVCategories() {
-  return useQuery<{ id: number; name: string }[], Error>({
-    queryKey: ['d1cv', 'categories'],
+interface StagedTechnologyResponse {
+  found: boolean;
+  staged_id?: number;
+  ai_staged_id?: number | null;
+  operation?: string;
+  status?: string;
+  created_at?: string;
+  d1cvData?: {
+    name?: string;
+    category_id?: number;
+    experience?: string;
+    experience_years?: number;
+    proficiency_percent?: number;
+    level?: string;
+    is_active?: boolean;
+  };
+  aiData?: {
+    summary?: string;
+    action?: string;
+    effect?: string;
+    outcome?: string;
+    related_project?: string;
+    employer?: string;
+    recency?: string;
+  };
+  hasAIData?: boolean;
+  message?: string;
+}
+
+/**
+ * Response from unified technology lookup endpoint
+ * Combines D1CV, AI Agent, and Staging data in a single request
+ */
+interface UnifiedTechnologyResponse {
+  found: boolean;
+  source: 'production' | 'staged' | 'none';
+  message?: string;
+  d1cv: {
+    found: boolean;
+    data: {
+      id?: number;
+      name?: string;
+      category_id?: number;
+      category?: string;
+      experience?: string;
+      experience_years?: number;
+      proficiency_percent?: number;
+      level?: string;
+      is_active?: boolean;
+    } | null;
+  };
+  aiAgent: {
+    found: boolean;
+    source: 'production' | 'staged' | 'none';
+    data: {
+      summary?: string;
+      action?: string;
+      effect?: string;
+      outcome?: string;
+      related_project?: string;
+      employer?: string;
+      recency?: string;
+      stable_id?: string;
+    } | null;
+  };
+  staged: {
+    found: boolean;
+    operation: string | null;
+    staged_id: number | null;
+    ai_staged_id: number | null;
+    d1cvData: Record<string, unknown> | null;
+    aiData: Record<string, unknown> | null;
+  };
+}
+
+/**
+ * Unified technology lookup - single request to get all data
+ * 
+ * This replaces the need for multiple separate calls to:
+ * - /api/d1cv/technologies/:name
+ * - /api/ai-agent/technologies/:name  
+ * - /api/staged/technology/:name
+ * 
+ * Returns combined data from production and staging in one response.
+ */
+export function useUnifiedTechnology(name: string | undefined) {
+  const encodedName = name ? encodeURIComponent(name) : null;
+
+  return useQuery<{
+    technology: D1CVTechnologyWithAIMatch | null;
+    source: 'production' | 'staged' | 'none';
+    staged: {
+      found: boolean;
+      operation: string | null;
+      staged_id: number | null;
+      ai_staged_id: number | null;
+    };
+  }, Error>({
+    queryKey: ['unified', 'technology', name],
     queryFn: async () => {
-      const response = await apiClient.get<{ categories: { id: number; name: string }[] }>('/api/d1cv/categories');
-      return response.categories || [];
+      try {
+        const response = await apiClient.get<UnifiedTechnologyResponse>(
+          `/api/technology/unified/${encodedName}`
+        );
+
+        if (!response.found) {
+          return {
+            technology: null,
+            source: 'none' as const,
+            staged: { found: false, operation: null, staged_id: null, ai_staged_id: null },
+          };
+        }
+
+        // Build the combined technology object
+        const isFromStaging = response.source === 'staged';
+        const d1cvData = isFromStaging
+          ? response.staged.d1cvData
+          : response.d1cv.data;
+        const aiData = response.aiAgent.data;
+
+        if (!d1cvData) {
+          return {
+            technology: null,
+            source: response.source,
+            staged: {
+              found: response.staged.found,
+              operation: response.staged.operation,
+              staged_id: response.staged.staged_id,
+              ai_staged_id: response.staged.ai_staged_id,
+            },
+          };
+        }
+
+        // Build AI match if available
+        let aiMatch: AIAgentTechnology | null = null;
+        if (aiData && response.aiAgent.found) {
+          const recencyValue = aiData.recency as 'current' | 'recent' | 'legacy' | undefined;
+          aiMatch = {
+            id: 0, // Will be 0 if from staging
+            name: (d1cvData.name as string) || '',
+            stable_id: (aiData.stable_id as string) || '',
+            experience: (d1cvData.experience as string) || '',
+            experience_years: (d1cvData.experience_years as number) || 0,
+            proficiency_percent: (d1cvData.proficiency_percent as number) || 0,
+            level: (d1cvData.level as string) || 'Beginner',
+            summary: aiData.summary || '',
+            action: aiData.action || '',
+            effect: aiData.effect || '',
+            outcome: aiData.outcome || '',
+            related_project: aiData.related_project || '',
+            employer: aiData.employer || '',
+            recency: recencyValue || 'current',
+          };
+        }
+
+        const technology: D1CVTechnologyWithAIMatch = {
+          id: (d1cvData.id as number) || -1, // Negative if from staging
+          name: (d1cvData.name as string) || '',
+          category_id: (d1cvData.category_id as number) || 0,
+          category: (d1cvData.category as string) || '',
+          experience: (d1cvData.experience as string) || '',
+          experience_years: (d1cvData.experience_years as number) || 0,
+          proficiency_percent: (d1cvData.proficiency_percent as number) || 0,
+          level: (d1cvData.level as string) || 'Beginner',
+          is_active: (d1cvData.is_active as boolean) ?? true,
+          hasAiMatch: Boolean(aiMatch),
+          aiMatch,
+          aiFromStaging: response.aiAgent.source === 'staged',
+        };
+
+        return {
+          technology,
+          source: response.source,
+          staged: {
+            found: response.staged.found,
+            operation: response.staged.operation,
+            staged_id: response.staged.staged_id,
+            ai_staged_id: response.staged.ai_staged_id,
+          },
+        };
+      } catch (error) {
+        // If 404, return empty result
+        if (error instanceof Error && error.message.includes('404')) {
+          return {
+            technology: null,
+            source: 'none' as const,
+            staged: { found: false, operation: null, staged_id: null, ai_staged_id: null },
+          };
+        }
+        throw error;
+      }
     },
-    staleTime: 1000 * 60 * 30, // 30 minutes (categories don't change often)
+    enabled: encodedName !== null,
+    retry: false,
+  });
+}
+
+/**
+ * Fetch a staged technology by name (for editing pending changes)
+ * Use this when the technology doesn't exist in production yet
+ */
+export function useStagedTechnology(name: string | undefined) {
+  const encodedName = name ? encodeURIComponent(name) : null;
+
+  return useQuery<StagedTechnologyResponse, Error>({
+    queryKey: ['staged', 'technology', name],
+    queryFn: async () => {
+      return apiClient.get<StagedTechnologyResponse>(`/api/staged/technology/${encodedName}`);
+    },
+    enabled: encodedName !== null,
+    retry: false, // Don't retry if not found
+  });
+}
+
+/**
+ * Update a staged technology (both D1CV and AI payloads)
+ */
+export function useUpdateStagedTechnology() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean; staged_id: number }, Error, {
+    stagedId: number;
+    d1cvPayload?: Record<string, unknown>;
+    aiPayload?: Record<string, unknown>;
+  }>({
+    mutationFn: async ({ stagedId, d1cvPayload, aiPayload }) => {
+      return apiClient.put(`/api/staged/technology/${stagedId}`, {
+        d1cv_payload: d1cvPayload,
+        ai_payload: aiPayload,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staged'] });
+      queryClient.invalidateQueries({ queryKey: ['staged', 'd1cv'] });
+    },
   });
 }
 
@@ -445,7 +756,9 @@ export function useStageTechnology() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['d1cv', 'technologies'] });
-      queryClient.invalidateQueries({ queryKey: ['staged'] });
+      queryClient.invalidateQueries({ queryKey: ['staged'] }); // Original staging tables
+      queryClient.invalidateQueries({ queryKey: ['staged', 'd1cv'] }); // usePendingStagedD1CV
+      queryClient.invalidateQueries({ queryKey: ['v2', 'staged'] }); // v2 git-like workflow
     },
   });
 }

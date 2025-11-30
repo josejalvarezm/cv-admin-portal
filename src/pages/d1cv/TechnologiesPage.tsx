@@ -46,9 +46,11 @@ import {
   Refresh as RefreshIcon,
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
+  Schedule as PendingIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useD1CVTechnologiesWithAIMatch } from '@hooks/useD1CV';
+import { useD1CVTechnologiesWithAIMatch, useStageTechnology } from '@hooks/useD1CV';
+import { usePendingStagedD1CV } from '@hooks/useCommits';
 import type { D1CVTechnologyWithAIMatch, AIAgentTechnology } from '@/types';
 
 const LEVEL_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'default'> = {
@@ -72,10 +74,75 @@ export function D1CVTechnologiesPage() {
   const [selectedTech, setSelectedTech] = useState<D1CVTechnologyWithAIMatch | null>(null);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiDialogData, setAiDialogData] = useState<AIAgentTechnology | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [techToDelete, setTechToDelete] = useState<D1CVTechnologyWithAIMatch | null>(null);
   const { data: technologies = [], isLoading, error, refetch } = useD1CVTechnologiesWithAIMatch();
+  const { mutate: stageTechnology, isPending: staging } = useStageTechnology();
+  const { data: pendingStaged = [], refetch: refetchStaged } = usePendingStagedD1CV();
+
+  // Create a map of staged technologies for quick lookup (keyed by lowercase name)
+  const stagedTechMap = useMemo(() => {
+    const map = new Map<string, { operation: string; stagedId: number }>();
+    pendingStaged.forEach((item) => {
+      if (item.entity_type === 'technology' && item.payload) {
+        try {
+          const payload = JSON.parse(item.payload);
+          if (payload.name) {
+            map.set(payload.name.toLowerCase(), {
+              operation: item.operation,
+              stagedId: item.id
+            });
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+    });
+    return map;
+  }, [pendingStaged]);
+
+  // Create virtual technology entries from staged INSERTs (new technologies not in production)
+  const stagedInsertTechnologies = useMemo(() => {
+    const virtualTechs: D1CVTechnologyWithAIMatch[] = [];
+    const existingNames = new Set(technologies.map(t => t.name.toLowerCase()));
+
+    pendingStaged.forEach((item) => {
+      if (item.entity_type === 'technology' && item.operation === 'INSERT' && item.payload) {
+        try {
+          const payload = JSON.parse(item.payload);
+          // Only add if not already in production
+          if (payload.name && !existingNames.has(payload.name.toLowerCase())) {
+            virtualTechs.push({
+              id: -item.id, // Negative ID to distinguish from production
+              name: payload.name,
+              category: '', // Will be resolved later or shown as "Pending"
+              category_id: payload.category_id,
+              experience: payload.experience || '',
+              experience_years: payload.experience_years || 0,
+              proficiency_percent: payload.proficiency_percent || 0,
+              level: payload.level || 'Beginner',
+              is_active: payload.is_active ?? true,
+              hasAiMatch: false, // Staged, not yet in AI Agent DB
+              aiMatch: null,
+              _isStaged: true, // Custom flag for UI
+              _stagedOperation: 'INSERT',
+            } as D1CVTechnologyWithAIMatch & { _isStaged?: boolean; _stagedOperation?: string });
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+    });
+    return virtualTechs;
+  }, [pendingStaged, technologies]);
+
+  // Combine production technologies with staged INSERTs
+  const allTechnologies = useMemo(() => {
+    return [...technologies, ...stagedInsertTechnologies];
+  }, [technologies, stagedInsertTechnologies]);
 
   const filteredAndSortedTechnologies = useMemo(() => {
-    let result = technologies.filter((tech: D1CVTechnologyWithAIMatch) =>
+    let result = allTechnologies.filter((tech: D1CVTechnologyWithAIMatch) =>
       tech.name.toLowerCase().includes(search.toLowerCase()) ||
       tech.category?.toLowerCase().includes(search.toLowerCase())
     );
@@ -123,7 +190,7 @@ export function D1CVTechnologiesPage() {
     });
 
     return result;
-  }, [technologies, search, sortField, sortOrder]);
+  }, [allTechnologies, search, sortField, sortOrder]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -183,9 +250,32 @@ export function D1CVTechnologiesPage() {
   };
 
   const handleDelete = () => {
-    // TODO: Stage DELETE operation
-    console.log('Stage delete for', selectedTech?.id);
+    if (selectedTech) {
+      setTechToDelete(selectedTech);
+      setDeleteDialogOpen(true);
+    }
     handleMenuClose();
+  };
+
+  const confirmDelete = () => {
+    if (!techToDelete) return;
+
+    stageTechnology(
+      {
+        operation: 'DELETE',
+        entityId: techToDelete.id,
+        entityName: techToDelete.name,
+        d1cvPayload: { name: techToDelete.name }, // Minimal payload for delete
+      },
+      {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setTechToDelete(null);
+          // Stay on page and refresh staged status
+          refetchStaged();
+        },
+      }
+    );
   };
 
   if (error) {
@@ -328,13 +418,14 @@ export function D1CVTechnologiesPage() {
                       AI Agent
                     </TableSortLabel>
                   </TableCell>
+                  <TableCell>Staged</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredAndSortedTechnologies.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={9} align="center">
                       <Typography color="text.secondary" sx={{ py: 4 }}>
                         {search ? 'No technologies match your search' : 'No technologies found in portfolio'}
                       </Typography>
@@ -401,6 +492,25 @@ export function D1CVTechnologiesPage() {
                           onClick={(e) => handleAIMatchClick(e, tech)}
                           sx={{ cursor: tech.hasAiMatch ? 'pointer' : 'default' }}
                         />
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const staged = stagedTechMap.get(tech.name.toLowerCase());
+                          if (!staged) return null;
+
+                          const isNew = staged.operation === 'INSERT';
+                          const isDelete = staged.operation === 'DELETE';
+
+                          return (
+                            <Chip
+                              icon={<PendingIcon fontSize="small" />}
+                              label={isNew ? 'New' : isDelete ? 'Delete' : 'Update'}
+                              size="small"
+                              color={isDelete ? 'error' : isNew ? 'success' : 'warning'}
+                              variant="filled"
+                            />
+                          );
+                        })()}
                       </TableCell>
                       <TableCell align="right">
                         <IconButton
@@ -509,6 +619,39 @@ export function D1CVTechnologiesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAiDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: 'error.main' }}>
+          🗑️ Confirm Delete
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to stage deletion of <strong>{techToDelete?.name}</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            This will create a staged DELETE operation. You can review and apply it from the Staged Changes page.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={staging}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            color="error"
+            variant="contained"
+            disabled={staging}
+          >
+            {staging ? 'Staging...' : 'Stage Delete'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

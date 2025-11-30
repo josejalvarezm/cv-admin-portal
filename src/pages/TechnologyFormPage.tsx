@@ -21,7 +21,7 @@ import {
   Stack,
   CircularProgress,
 } from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Science as ScienceIcon } from '@mui/icons-material';
 
 import { useTechnology } from '@hooks/useTechnologies';
 import { useStageTechnology } from '@hooks/useD1CV';
@@ -52,6 +52,26 @@ const DEFAULT_FORM_VALUES: TechnologyFormData = {
   outcome: '',
   related_project: '',
   employer: '',
+  recency: 'current',
+};
+
+/**
+ * Fake test data for quick form filling
+ */
+const FAKE_TEST_DATA: TechnologyFormData = {
+  name: `UnicornScript ${Math.floor(Math.random() * 9000) + 1000}`,
+  category: 'Languages',
+  experience: 'Built magical rainbow-powered APIs that sparkle in production',
+  experience_years: 42,
+  proficiency_percent: 99,
+  level: 'Expert',
+  is_active: true,
+  summary: 'A mythical programming language that only exists in dreams',
+  action: 'Conjured enchanted microservices using pure imagination',
+  effect: 'Reduced bug count to negative numbers through wishful thinking',
+  outcome: 'Achieved 200% uptime by bending the laws of physics',
+  related_project: 'Project Sparklepony',
+  employer: 'Unicorn Labs Inc.',
   recency: 'current',
 };
 
@@ -109,6 +129,21 @@ export function TechnologyFormPage() {
   }, [similarTechs, isEdit]);
 
   /**
+   * Fill form with fake test data (for manual testing)
+   */
+  const fillTestData = useCallback(() => {
+    // Generate fresh random name each time
+    const testData = {
+      ...FAKE_TEST_DATA,
+      name: `UnicornScript ${Math.floor(Math.random() * 9000) + 1000}`,
+    };
+    Object.entries(testData).forEach(([key, value]) => {
+      setValue(key as keyof TechnologyFormData, value);
+    });
+    setAiExpanded(true);
+  }, [setValue]);
+
+  /**
    * Handle form submission
    * Builds separate payloads for D1CV and AI targets
    */
@@ -130,14 +165,14 @@ export function TechnologyFormPage() {
         },
         aiPayload: hasAiData
           ? {
-              summary: data.summary,
-              action: data.action,
-              effect: data.effect,
-              outcome: data.outcome,
-              related_project: data.related_project,
-              employer: data.employer,
-              recency: data.recency,
-            }
+            summary: data.summary,
+            action: data.action,
+            effect: data.effect,
+            outcome: data.outcome,
+            related_project: data.related_project,
+            employer: data.employer,
+            recency: data.recency,
+          }
           : undefined,
       },
       {
@@ -178,6 +213,16 @@ export function TechnologyFormPage() {
           {isEdit ? 'Edit Technology' : 'Add Technology'}
         </Typography>
         <Stack direction="row" spacing={2}>
+          {!isEdit && (
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<ScienceIcon />}
+              onClick={fillTestData}
+            >
+              Fill Test Data
+            </Button>
+          )}
           <Button variant="outlined" onClick={() => navigate(-1)}>
             Cancel
           </Button>
