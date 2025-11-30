@@ -11,6 +11,25 @@ export type TechnologyLevel = typeof TECHNOLOGY_LEVELS[number];
 export const RECENCY_OPTIONS = ['current', 'recent', 'legacy'] as const;
 export type RecencyOption = typeof RECENCY_OPTIONS[number];
 
+/**
+ * AI Agent categories for semantic search
+ * These are independent from D1CV categories (no coupling)
+ */
+export const AI_CATEGORIES = [
+  'Architecture & Design',
+  'Backend Development',
+  'Cloud & DevOps',
+  'Database & Performance',
+  'Edge Architectures (Production)',
+  'Frontend Development',
+  'Legacy Development',
+  'Modern Development Practices',
+  'Technical Research & Prototyping',
+  'Testing',
+  'Languages',
+] as const;
+export type AICategory = typeof AI_CATEGORIES[number];
+
 export const CATEGORIES = [
   'Backend Development',
   'Frontend Development',

@@ -23,6 +23,7 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { RECENCY_OPTIONS } from '@/constants';
+import { useAICategories } from '@/hooks/useAICategories';
 import type { TechnologyFormData } from '@/types';
 
 interface AIEnrichmentSectionProps {
@@ -36,6 +37,9 @@ export function AIEnrichmentSection({
   expanded,
   onToggleExpand,
 }: AIEnrichmentSectionProps) {
+  // Fetch AI categories from API with localStorage caching
+  const { data: aiCategories = [], isLoading: loadingCategories } = useAICategories();
+
   return (
     <Card>
       <CardHeader
@@ -55,8 +59,51 @@ export function AIEnrichmentSection({
             Fill these fields to improve how the AI chatbot responds about this technology.
             Changes require manual sync to the AI Agent.
           </Alert>
-          
+
           <Grid container spacing={3}>
+            {/* AI Category Field */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
+                name="ai_category"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    select
+                    label="AI Category (for semantic search)"
+                    disabled={loadingCategories}
+                  >
+                    <MenuItem value="">
+                      <em>{loadingCategories ? 'Loading...' : 'Select category...'}</em>
+                    </MenuItem>
+                    {aiCategories.map((cat) => (
+                      <MenuItem key={cat} value={cat}>
+                        {cat}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </Grid>
+
+            {/* Recency Field - moved up next to category */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
+                name="recency"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} fullWidth select label="Recency">
+                    {RECENCY_OPTIONS.map((opt) => (
+                      <MenuItem key={opt} value={opt}>
+                        {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </Grid>
+
             {/* Summary Field */}
             <Grid size={{ xs: 12 }}>
               <Controller
@@ -175,22 +222,6 @@ export function AIEnrichmentSection({
               />
             </Grid>
 
-            {/* Recency Field */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Controller
-                name="recency"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} fullWidth select label="Recency">
-                    {RECENCY_OPTIONS.map((opt) => (
-                      <MenuItem key={opt} value={opt}>
-                        {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Grid>
           </Grid>
         </CardContent>
       </Collapse>

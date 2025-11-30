@@ -76,6 +76,7 @@ export interface TechnologyFormData extends BaseTechnology {
   category: string;
   is_active: boolean;
   // AI enrichment (optional)
+  ai_category: string;  // Separate from D1CV category - for semantic search
   summary: string;
   action: string;
   effect: string;

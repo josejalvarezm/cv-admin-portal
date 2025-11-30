@@ -45,6 +45,7 @@ const DEFAULT_FORM_VALUES: TechnologyFormData = {
   level: 'Intermediate',
   is_active: true,
   // AI fields
+  ai_category: '',
   summary: '',
   action: '',
   effect: '',
@@ -63,6 +64,7 @@ const FAKE_TEST_DATA: TechnologyFormData = {
   proficiency_percent: 99,
   level: 'Expert',
   is_active: true,
+  ai_category: 'Languages',
   summary: 'A mythical programming language',
   action: 'Conjured enchanted microservices',
   effect: 'Reduced bugs via wishful thinking',
@@ -196,6 +198,8 @@ export function D1CVTechnologyFormPage() {
         related_project: data.related_project,
         employer: data.employer,
         recency: data.recency,
+        // AI category is independent from D1CV category (no coupling)
+        category: data.ai_category,
       }
       : undefined;
 

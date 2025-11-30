@@ -41,6 +41,9 @@ export {
   useVectorizeReindex,
 } from './useAIAgent';
 
+// AI Categories with localStorage caching
+export { useAICategories, clearAICategoriesCache } from './useAICategories';
+
 // Git-like commit workflow (v2)
 export {
   useUncommittedChanges,
