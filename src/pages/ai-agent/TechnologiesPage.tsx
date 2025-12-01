@@ -28,6 +28,8 @@ import {
   Button,
   Tooltip,
   IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -36,6 +38,7 @@ import {
   OpenInNew as OpenInNewIcon,
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
+  MoreVert as MoreIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAIAgentTechnologiesWithD1CVMatch } from '@hooks/useAIAgent';
@@ -57,6 +60,8 @@ export function AIAgentTechnologiesPage() {
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedTech, setSelectedTech] = useState<AIAgentTechnologyWithD1CVMatch | null>(null);
   const { data: technologies = [], isLoading, error, refetch } = useAIAgentTechnologiesWithD1CVMatch();
 
   const filteredAndSortedTechnologies = useMemo(() => {
@@ -138,6 +143,24 @@ export function AIAgentTechnologiesPage() {
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, tech: AIAgentTechnologyWithD1CVMatch) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+    setSelectedTech(tech);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedTech(null);
+  };
+
+  const handleEdit = () => {
+    if (selectedTech) {
+      navigate(`/ai-agent/technologies/${selectedTech.stable_id}`);
+    }
+    handleMenuClose();
   };
 
   if (error) {
@@ -350,12 +373,9 @@ export function AIAgentTechnologiesPage() {
                       <TableCell align="right">
                         <IconButton
                           size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/ai-agent/technologies/${tech.stable_id}`);
-                          }}
+                          onClick={(e) => handleMenuOpen(e, tech)}
                         >
-                          <OpenInNewIcon />
+                          <MoreIcon />
                         </IconButton>
                       </TableCell>
                     </TableRow>
@@ -375,6 +395,18 @@ export function AIAgentTechnologiesPage() {
           rowsPerPageOptions={[15, 25, 50, 100]}
         />
       </Card>
+
+      {/* Context Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleEdit}>
+          <OpenInNewIcon fontSize="small" sx={{ mr: 1 }} />
+          View / Edit
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }
