@@ -100,28 +100,58 @@ export function StagedChangesPage() {
 
   const confirmSyncAI = () => {
     setSyncProgress({ step: 1, message: 'Applying changes to D1...' });
+    
+    // Track progress step
+    let currentStep = 1;
+
+    // Progress animation runs during the API call (~2 min total)
+    // Steps 1-3 take ~30s each, step 4 waits for API to complete
+    const progressTimers: NodeJS.Timeout[] = [];
+    
+    progressTimers.push(setTimeout(() => {
+      currentStep = 2;
+      setSyncProgress({ step: 2, message: 'Generating embeddings...' });
+    }, 30000)); // 30s
+    
+    progressTimers.push(setTimeout(() => {
+      currentStep = 3;
+      setSyncProgress({ step: 3, message: 'Updating vector index...' });
+    }, 60000)); // 60s
+    
+    progressTimers.push(setTimeout(() => {
+      currentStep = 4;
+      setSyncProgress({ step: 4, message: 'Verifying sync...' });
+    }, 90000)); // 90s
+
+    const finishSync = () => {
+      // Clear any remaining timers
+      progressTimers.forEach(t => clearTimeout(t));
+      
+      setSyncProgress({ step: 5, message: 'Complete!' });
+      setTimeout(() => {
+        setSyncProgress(null);
+        setSyncDialogOpen(false);
+        refetch();
+      }, 1500);
+    };
 
     applyAI(undefined, {
       onSuccess: () => {
-        // Show progress through all steps before closing
-        setSyncProgress({ step: 2, message: 'Generating embeddings...' });
-        setTimeout(() => {
-          setSyncProgress({ step: 3, message: 'Updating vector index...' });
-          setTimeout(() => {
-            setSyncProgress({ step: 4, message: 'Verifying sync...' });
-            setTimeout(() => {
-              setSyncProgress({ step: 5, message: 'Complete!' }); // Step 5 = all done
-              setTimeout(() => {
-                setSyncProgress(null);
-                setSyncDialogOpen(false);
-                refetch();
-              }, 1000);
-            }, 1000);
-          }, 1000);
-        }, 1000);
+        // If we're already at step 4, finish immediately
+        // Otherwise jump to step 4 and finish
+        if (currentStep >= 4) {
+          finishSync();
+        } else {
+          // Jump to step 4 and finish
+          setSyncProgress({ step: 4, message: 'Verifying sync...' });
+          setTimeout(finishSync, 1500);
+        }
       },
-      onError: () => {
+      onError: (error) => {
+        progressTimers.forEach(t => clearTimeout(t));
         setSyncProgress(null);
+        // Keep dialog open to show error
+        console.error('AI Sync failed:', error);
       },
     });
   };
