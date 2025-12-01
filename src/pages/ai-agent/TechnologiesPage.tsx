@@ -30,6 +30,10 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -39,9 +43,11 @@ import {
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
   MoreVert as MoreIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAIAgentTechnologiesWithD1CVMatch } from '@hooks/useAIAgent';
+import { useStageTechnology } from '@hooks/useD1CV';
 import type { AIAgentTechnologyWithD1CVMatch } from '@/types';
 
 const RECENCY_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'default'> = {
@@ -62,7 +68,10 @@ export function AIAgentTechnologiesPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedTech, setSelectedTech] = useState<AIAgentTechnologyWithD1CVMatch | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [techToDelete, setTechToDelete] = useState<AIAgentTechnologyWithD1CVMatch | null>(null);
   const { data: technologies = [], isLoading, error, refetch } = useAIAgentTechnologiesWithD1CVMatch();
+  const { mutate: stageTechnology, isPending: staging } = useStageTechnology();
 
   const filteredAndSortedTechnologies = useMemo(() => {
     let result = technologies.filter((tech: AIAgentTechnologyWithD1CVMatch) =>
@@ -161,6 +170,34 @@ export function AIAgentTechnologiesPage() {
       navigate(`/ai-agent/technologies/${selectedTech.stable_id}`);
     }
     handleMenuClose();
+  };
+
+  const handleDelete = () => {
+    if (selectedTech) {
+      setTechToDelete(selectedTech);
+      setDeleteDialogOpen(true);
+    }
+    handleMenuClose();
+  };
+
+  const confirmDelete = () => {
+    if (!techToDelete || !techToDelete.d1cvMatchName) return;
+
+    stageTechnology(
+      {
+        operation: 'DELETE',
+        entityId: techToDelete.id,
+        entityName: techToDelete.d1cvMatchName,
+        d1cvPayload: { name: techToDelete.d1cvMatchName },
+      },
+      {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setTechToDelete(null);
+          refetch();
+        },
+      }
+    );
   };
 
   if (error) {
@@ -406,7 +443,40 @@ export function AIAgentTechnologiesPage() {
           <OpenInNewIcon fontSize="small" sx={{ mr: 1 }} />
           View / Edit
         </MenuItem>
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }} disabled={!selectedTech?.d1cvMatchName}>
+          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+          Stage Delete
+        </MenuItem>
       </Menu>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete Technology</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 2 }}>
+            Are you sure you want to stage deletion of <strong>{techToDelete?.d1cvMatchName || techToDelete?.name}</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            This will remove both the D1CV record and the AI Agent enrichment data.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={confirmDelete}
+            color="error"
+            variant="contained"
+            disabled={staging}
+          >
+            {staging ? 'Deleting...' : 'Stage Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
