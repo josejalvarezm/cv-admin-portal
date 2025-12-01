@@ -103,19 +103,27 @@ export function StagedChangesPage() {
 
     applyAI(undefined, {
       onSuccess: () => {
-        setSyncProgress(null);
-        setSyncDialogOpen(false);
-        refetch();
+        // Show progress through all steps before closing
+        setSyncProgress({ step: 2, message: 'Generating embeddings...' });
+        setTimeout(() => {
+          setSyncProgress({ step: 3, message: 'Updating vector index...' });
+          setTimeout(() => {
+            setSyncProgress({ step: 4, message: 'Verifying sync...' });
+            setTimeout(() => {
+              setSyncProgress({ step: 5, message: 'Complete!' }); // Step 5 = all done
+              setTimeout(() => {
+                setSyncProgress(null);
+                setSyncDialogOpen(false);
+                refetch();
+              }, 1000);
+            }, 1000);
+          }, 1000);
+        }, 1000);
       },
       onError: () => {
         setSyncProgress(null);
       },
     });
-
-    // Simulate progress updates (in real impl, use WebSocket or polling)
-    setTimeout(() => setSyncProgress({ step: 2, message: 'Generating embeddings...' }), 2000);
-    setTimeout(() => setSyncProgress({ step: 3, message: 'Updating vector index...' }), 5000);
-    setTimeout(() => setSyncProgress({ step: 4, message: 'Verifying sync...' }), 8000);
   };
 
   if (isLoading) {
@@ -260,9 +268,14 @@ export function StagedChangesPage() {
               </Stack>
               <LinearProgress
                 variant="determinate"
-                value={(syncProgress.step / 4) * 100}
+                value={Math.min((syncProgress.step / 4) * 100, 100)}
                 sx={{ mt: 3 }}
               />
+              {syncProgress.step === 5 && (
+                <Typography color="success.main" sx={{ mt: 2, textAlign: 'center' }}>
+                  ✅ Sync completed successfully!
+                </Typography>
+              )}
             </Box>
           )}
         </DialogContent>
