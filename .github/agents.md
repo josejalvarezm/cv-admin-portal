@@ -86,11 +86,16 @@ export function useUnifiedTechnology(name: string | undefined) {
 
 ### Form Data Flow
 
-1. `useUnifiedTechnology` fetches data from all sources
+1. `useUnifiedTechnology` fetches data from all sources (supports `aiId` param for direct lookup)
 2. `useEffect` populates form fields from response
 3. `useStageTechnology` or `useUpdateStagedTechnology` saves changes
 
 ### AI Enrichment Handling
+
+When navigating from the grid with an AI match, `aiId` is passed as a query parameter to skip fuzzy matching:
+```typescript
+navigate(`/d1cv/technologies/${row.id}?aiId=${row.aiId}`);
+```
 
 When editing a technology with AI match data:
 ```typescript
@@ -230,6 +235,7 @@ Protected by Cloudflare Zero Trust:
 
 ## Version History
 
+- **v1.4.2** - Add cache refresh snackbar, AI category field fix, aiId optimization
 - **v1.4.1** - Fix: AI enrichment fields now populate correctly from AI Agent match
 - **v1.4.0** - Add delete action to AI Agent Technologies menu
 - Earlier versions...
