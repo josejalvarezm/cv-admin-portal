@@ -342,7 +342,7 @@ interface UnifiedTechnologyResponse {
  * 
  * Returns combined data from production and staging in one response.
  */
-export function useUnifiedTechnology(name: string | undefined) {
+export function useUnifiedTechnology(name: string | undefined, aiId?: string | null) {
   const encodedName = name ? encodeURIComponent(name) : null;
 
   return useQuery<{
@@ -355,11 +355,17 @@ export function useUnifiedTechnology(name: string | undefined) {
       ai_staged_id: number | null;
     };
   }, Error>({
-    queryKey: ['unified', 'technology', name],
+    queryKey: ['unified', 'technology', name, aiId],
     queryFn: async () => {
       try {
+        // Build query string - use aiId for direct lookup if provided
+        let queryPath = `/api/technology/unified/${encodedName}`;
+        if (aiId) {
+          queryPath += `?aiId=${encodeURIComponent(aiId)}`;
+        }
+
         const response = await apiClient.get<UnifiedTechnologyResponse>(
-          `/api/technology/unified/${encodedName}`
+          queryPath
         );
 
         if (!response.found) {

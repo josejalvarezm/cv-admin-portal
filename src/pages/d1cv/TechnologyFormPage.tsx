@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
   Box,
@@ -76,7 +76,9 @@ const FAKE_TEST_DATA: TechnologyFormData = {
 
 export function D1CVTechnologyFormPage() {
   const { name: techName } = useParams<{ name: string }>();
+  const [searchParams] = useSearchParams();
   const decodedName = techName ? decodeURIComponent(techName) : undefined;
+  const aiIdFromQuery = searchParams.get('aiId');
   const navigate = useNavigate();
   const isEdit = Boolean(techName);
 
@@ -87,7 +89,8 @@ export function D1CVTechnologyFormPage() {
   const [stagedId, setStagedId] = useState<number | null>(null);
 
   // Data hooks - unified endpoint fetches all data in one request
-  const { data: unifiedData, isLoading: loadingTech, error: techError } = useUnifiedTechnology(decodedName);
+  // Pass aiId to skip fuzzy matching if provided via query parameter
+  const { data: unifiedData, isLoading: loadingTech, error: techError } = useUnifiedTechnology(decodedName, aiIdFromQuery);
   const { mutate: stageTechnology, isPending: staging } = useStageTechnology();
   const { mutate: updateStaged, isPending: updatingStaged } = useUpdateStagedTechnology();
   const { data: categories = [], isLoading: loadingCategories } = useD1CVCategories();

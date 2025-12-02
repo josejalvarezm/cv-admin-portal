@@ -236,7 +236,9 @@ export function D1CVTechnologiesPage() {
   const handleEdit = () => {
     if (selectedTech) {
       // Use URL-encoded name since D1CV doesn't have IDs in v2 API
-      navigate(`/d1cv/technologies/${encodeURIComponent(selectedTech.name)}`);
+      // Include aiId if available to skip fuzzy matching on form load
+      const aiIdParam = selectedTech.hasAiMatch && selectedTech.aiMatch?.id ? `?aiId=${selectedTech.aiMatch.id}` : '';
+      navigate(`/d1cv/technologies/${encodeURIComponent(selectedTech.name)}${aiIdParam}`);
     }
     handleMenuClose();
   };
@@ -432,96 +434,99 @@ export function D1CVTechnologiesPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedTechnologies.map((tech: D1CVTechnologyWithAIMatch) => (
-                    <TableRow
-                      key={tech.name}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/d1cv/technologies/${encodeURIComponent(tech.name)}`)}
-                    >
-                      <TableCell>
-                        <Typography fontWeight={600}>{tech.name}</Typography>
-                      </TableCell>
-                      <TableCell>{tech.category || '—'}</TableCell>
-                      <TableCell>{tech.experience || '—'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={tech.level}
-                          size="small"
-                          color={LEVEL_COLORS[tech.level] || 'default'}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box
-                            sx={{
-                              width: 60,
-                              height: 6,
-                              borderRadius: 3,
-                              bgcolor: 'grey.200',
-                              overflow: 'hidden',
-                            }}
-                          >
+                  paginatedTechnologies.map((tech: D1CVTechnologyWithAIMatch) => {
+                    const aiIdParam = tech.hasAiMatch && tech.aiMatch?.id ? `?aiId=${tech.aiMatch.id}` : '';
+                    return (
+                      <TableRow
+                        key={tech.name}
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/d1cv/technologies/${encodeURIComponent(tech.name)}${aiIdParam}`)}
+                      >
+                        <TableCell>
+                          <Typography fontWeight={600}>{tech.name}</Typography>
+                        </TableCell>
+                        <TableCell>{tech.category || '—'}</TableCell>
+                        <TableCell>{tech.experience || '—'}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={tech.level}
+                            size="small"
+                            color={LEVEL_COLORS[tech.level] || 'default'}
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Box
                               sx={{
-                                width: `${tech.proficiency_percent}%`,
-                                height: '100%',
-                                bgcolor: 'primary.main',
+                                width: 60,
+                                height: 6,
+                                borderRadius: 3,
+                                bgcolor: 'grey.200',
+                                overflow: 'hidden',
                               }}
-                            />
+                            >
+                              <Box
+                                sx={{
+                                  width: `${tech.proficiency_percent}%`,
+                                  height: '100%',
+                                  bgcolor: 'primary.main',
+                                }}
+                              />
+                            </Box>
+                            <Typography variant="body2">{tech.proficiency_percent}%</Typography>
                           </Box>
-                          <Typography variant="body2">{tech.proficiency_percent}%</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={tech.is_active ? 'Active' : 'Inactive'}
-                          size="small"
-                          color={tech.is_active ? 'success' : 'default'}
-                          variant={tech.is_active ? 'filled' : 'outlined'}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={tech.hasAiMatch ? <LinkIcon fontSize="small" /> : <LinkOffIcon fontSize="small" />}
-                          label={tech.hasAiMatch ? 'Match' : 'No match'}
-                          size="small"
-                          color={tech.hasAiMatch ? 'info' : 'default'}
-                          variant={tech.hasAiMatch ? 'filled' : 'outlined'}
-                          onClick={(e) => handleAIMatchClick(e, tech)}
-                          sx={{ cursor: tech.hasAiMatch ? 'pointer' : 'default' }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const staged = stagedTechMap.get(tech.name.toLowerCase());
-                          if (!staged) return null;
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={tech.is_active ? 'Active' : 'Inactive'}
+                            size="small"
+                            color={tech.is_active ? 'success' : 'default'}
+                            variant={tech.is_active ? 'filled' : 'outlined'}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={tech.hasAiMatch ? <LinkIcon fontSize="small" /> : <LinkOffIcon fontSize="small" />}
+                            label={tech.hasAiMatch ? 'Match' : 'No match'}
+                            size="small"
+                            color={tech.hasAiMatch ? 'info' : 'default'}
+                            variant={tech.hasAiMatch ? 'filled' : 'outlined'}
+                            onClick={(e) => handleAIMatchClick(e, tech)}
+                            sx={{ cursor: tech.hasAiMatch ? 'pointer' : 'default' }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const staged = stagedTechMap.get(tech.name.toLowerCase());
+                            if (!staged) return null;
 
-                          const isNew = staged.operation === 'INSERT';
-                          const isDelete = staged.operation === 'DELETE';
+                            const isNew = staged.operation === 'INSERT';
+                            const isDelete = staged.operation === 'DELETE';
 
-                          return (
-                            <Chip
-                              icon={<PendingIcon fontSize="small" />}
-                              label={isNew ? 'New' : isDelete ? 'Delete' : 'Update'}
-                              size="small"
-                              color={isDelete ? 'error' : isNew ? 'success' : 'warning'}
-                              variant="filled"
-                            />
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleMenuOpen(e, tech)}
-                        >
-                          <MoreIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                            return (
+                              <Chip
+                                icon={<PendingIcon fontSize="small" />}
+                                label={isNew ? 'New' : isDelete ? 'Delete' : 'Update'}
+                                size="small"
+                                color={isDelete ? 'error' : isNew ? 'success' : 'warning'}
+                                variant="filled"
+                              />
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleMenuOpen(e, tech)}
+                          >
+                            <MoreIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
