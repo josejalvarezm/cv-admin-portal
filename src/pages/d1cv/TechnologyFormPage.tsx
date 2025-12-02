@@ -141,16 +141,24 @@ export function D1CVTechnologyFormPage() {
     // If there's AI match data, populate AI fields and auto-expand the section
     if (technology.hasAiMatch && technology.aiMatch) {
       const aiData = technology.aiMatch;
-      if (aiData.summary) setValue('summary', aiData.summary);
-      if (aiData.action) setValue('action', aiData.action);
-      if (aiData.effect) setValue('effect', aiData.effect);
-      if (aiData.outcome) setValue('outcome', aiData.outcome);
-      if (aiData.related_project) setValue('related_project', aiData.related_project);
-      if (aiData.employer) setValue('employer', aiData.employer);
+      // Populate all AI fields (even if empty) to show available data from AI Agent
+      setValue('summary', aiData.summary ?? '');
+      setValue('action', aiData.action ?? '');
+      setValue('effect', aiData.effect ?? '');
+      setValue('outcome', aiData.outcome ?? '');
+      setValue('related_project', aiData.related_project ?? '');
+      setValue('employer', aiData.employer ?? '');
       if (aiData.recency) setValue('recency', aiData.recency);
 
-      // Auto-expand AI section if there's AI data
-      const hasAnyAiField = aiData.summary || aiData.action || aiData.effect || aiData.outcome;
+      // Auto-expand AI section if there's AI data (check for non-empty values)
+      const hasAnyAiField = !!(
+        aiData.summary ||
+        aiData.action ||
+        aiData.effect ||
+        aiData.outcome ||
+        aiData.related_project ||
+        aiData.employer
+      );
       if (hasAnyAiField) {
         setAiExpanded(true);
       }
