@@ -145,6 +145,7 @@ export function D1CVTechnologyFormPage() {
     if (technology.hasAiMatch && technology.aiMatch) {
       const aiData = technology.aiMatch;
       // Populate all AI fields (even if empty) to show available data from AI Agent
+      setValue('ai_category', aiData.category ?? '');
       setValue('summary', aiData.summary ?? '');
       setValue('action', aiData.action ?? '');
       setValue('effect', aiData.effect ?? '');

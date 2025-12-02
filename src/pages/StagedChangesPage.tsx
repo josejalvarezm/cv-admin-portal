@@ -25,6 +25,7 @@ import {
   Tabs,
   Tab,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -74,6 +75,7 @@ export function StagedChangesPage() {
   const { data: stagedChanges, isLoading, refetch } = useStagedChanges();
   const { mutate: applyD1CV, isPending: applyingD1CV } = useApplyD1CV();
   const { mutate: applyAI, isPending: applyingAI } = useApplyAI();
+  const [cacheSnackbar, setCacheSnackbar] = useState(false);
   const { mutate: purgeCache, isPending: purgingCache } = usePurgeD1CVCache();
 
   const d1cvChanges = stagedChanges?.d1cv || [];
@@ -173,7 +175,7 @@ export function StagedChangesPage() {
             variant="outlined"
             color="warning"
             startIcon={purgingCache ? <CircularProgress size={20} /> : <ClearCacheIcon />}
-            onClick={() => purgeCache()}
+            onClick={() => purgeCache(undefined, { onSuccess: () => setCacheSnackbar(true) })}
             disabled={purgingCache}
           >
             Refresh Portfolio Cache
@@ -376,6 +378,15 @@ export function StagedChangesPage() {
           <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Cache Refresh Success Snackbar */}
+      <Snackbar
+        open={cacheSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setCacheSnackbar(false)}
+        message="✓ Portfolio cache refreshed successfully"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 }
