@@ -29,6 +29,7 @@ import {
   Storage as StorageIcon,
   SmartToy as AIIcon,
   Work as WorkIcon,
+  Tune as TuneIcon,
   School as SchoolIcon,
   Hub as VectorizeIcon,
   Person as PersonIcon,
@@ -96,9 +97,12 @@ export function Layout() {
   const drawer = (
     <Box>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
-          🔧 CV Admin
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <TuneIcon />
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
+            CV Admin
+          </Typography>
+        </Stack>
       </Toolbar>
       <Divider />
       <List>

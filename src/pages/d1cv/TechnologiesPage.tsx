@@ -29,11 +29,11 @@ import {
   CircularProgress,
   Menu,
   MenuItem,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Alert,
   Divider,
 } from '@mui/material';
 import {
@@ -47,6 +47,7 @@ import {
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
   Schedule as PendingIcon,
+  SmartToy as SmartToyIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useD1CVTechnologiesWithAIMatch, useStageTechnology } from '@hooks/useD1CV';
@@ -569,7 +570,10 @@ export function D1CVTechnologiesPage() {
         fullWidth
       >
         <DialogTitle>
-          🤖 AI Agent Data
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <SmartToyIcon sx={{ color: 'secondary.main' }} />
+            <Typography variant="h6" component="span">AI Agent Data</Typography>
+          </Stack>
         </DialogTitle>
         <DialogContent>
           {aiDialogData && (
@@ -635,7 +639,10 @@ export function D1CVTechnologiesPage() {
         fullWidth
       >
         <DialogTitle sx={{ color: 'error.main' }}>
-          🗑️ Confirm Delete
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <DeleteIcon sx={{ color: 'error.main' }} />
+            <Typography variant="h6" component="span">Confirm Delete</Typography>
+          </Stack>
         </DialogTitle>
         <DialogContent>
           <Typography>

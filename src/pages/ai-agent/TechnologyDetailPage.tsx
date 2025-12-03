@@ -20,7 +20,13 @@ import {
   Link,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { ArrowBack as BackIcon, Edit as EditIcon } from '@mui/icons-material';
+import {
+  ArrowBack as BackIcon,
+  Edit as EditIcon,
+  BarChart as BasicInfoIcon,
+  SmartToy as AIEnrichmentIcon,
+  EmojiEvents as OutcomeIcon,
+} from '@mui/icons-material';
 import { useAIAgentTechnology } from '@hooks/useAIAgent';
 
 export function AIAgentTechnologyDetailPage() {
@@ -101,9 +107,12 @@ export function AIAgentTechnologyDetailPage() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                📊 Basic Information
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <BasicInfoIcon sx={{ color: 'primary.main' }} />
+                <Typography variant="h6">
+                  Basic Information
+                </Typography>
+              </Stack>
               <Divider sx={{ mb: 2 }} />
               <Stack spacing={2}>
                 <Box>
@@ -129,7 +138,7 @@ export function AIAgentTechnologyDetailPage() {
                     size="small"
                     color={
                       technology.recency === 'current' ? 'success' :
-                      technology.recency === 'recent' ? 'primary' : 'default'
+                        technology.recency === 'recent' ? 'primary' : 'default'
                     }
                   />
                 </Box>
@@ -142,9 +151,12 @@ export function AIAgentTechnologyDetailPage() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                🤖 AI Enrichment
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <AIEnrichmentIcon sx={{ color: 'primary.main' }} />
+                <Typography variant="h6">
+                  AI Enrichment
+                </Typography>
+              </Stack>
               <Divider sx={{ mb: 2 }} />
               <Stack spacing={2}>
                 <Box>
@@ -168,9 +180,12 @@ export function AIAgentTechnologyDetailPage() {
         <Grid size={{ xs: 12 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                🎯 Outcome-Driven Fields
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                <OutcomeIcon sx={{ color: 'primary.main' }} />
+                <Typography variant="h6">
+                  Outcome-Driven Fields
+                </Typography>
+              </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 These fields help the AI provide context-rich responses about your experience
               </Typography>

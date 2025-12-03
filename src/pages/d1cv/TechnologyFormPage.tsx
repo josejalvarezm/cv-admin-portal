@@ -25,7 +25,7 @@ import {
   Link,
   Chip,
 } from '@mui/material';
-import { Save as SaveIcon, ArrowBack as BackIcon, Science as ScienceIcon, Schedule as PendingIcon } from '@mui/icons-material';
+import { Save as SaveIcon, ArrowBack as BackIcon, Science as ScienceIcon, Schedule as PendingIcon, Inventory2 as InventoryIcon } from '@mui/icons-material';
 
 import { useUnifiedTechnology, useStageTechnology, useD1CVCategories, useUpdateStagedTechnology } from '@hooks/useD1CV';
 import { useSimilarityCheck } from '@hooks/useSimilarityCheck';
@@ -378,9 +378,10 @@ export function D1CVTechnologyFormPage() {
       {/* Portfolio Data Section */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
-            📦 Portfolio Data
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <InventoryIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h6" component="span">Portfolio Data</Typography>
+          </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             This data appears on your portfolio website
           </Typography>

@@ -16,11 +16,14 @@ import {
   Collapse,
   IconButton,
   Divider,
+  Stack,
+  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  SmartToy as SmartToyIcon,
 } from '@mui/icons-material';
 import { RECENCY_OPTIONS } from '@/constants';
 import { useAICategories } from '@/hooks/useAICategories';
@@ -43,7 +46,12 @@ export function AIEnrichmentSection({
   return (
     <Card>
       <CardHeader
-        title="🤖 AI Enrichment"
+        title={
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <SmartToyIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h6" component="span">AI Enrichment</Typography>
+          </Stack>
+        }
         subheader="Strongly suggested fields to improve chatbot responses"
         action={
           <IconButton onClick={onToggleExpand} aria-label={expanded ? 'Collapse' : 'Expand'}>

@@ -29,6 +29,8 @@ import {
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
+  Inventory2 as InventoryIcon,
+  SmartToy as SmartToyIconStaged,
   Refresh as RefreshIcon,
   PlayArrow as ApplyIcon,
   SyncAlt as SyncIcon,
@@ -62,7 +64,7 @@ const STATUS_COLORS: Record<string, 'warning' | 'success' | 'error' | 'default'>
 const OP_ICONS: Record<string, string> = {
   INSERT: '✚',
   UPDATE: '✏',
-  DELETE: '🗑',
+  DELETE: '🗑️',
 };
 
 export function StagedChangesPage() {
@@ -205,7 +207,10 @@ export function StagedChangesPage() {
               <Tab
                 label={
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <span>📦 Portfolio Queue</span>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <InventoryIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                      <span>Portfolio Queue</span>
+                    </Stack>
                     {pendingD1CV.length > 0 && (
                       <Chip label={pendingD1CV.length} size="small" color="warning" />
                     )}
@@ -215,7 +220,10 @@ export function StagedChangesPage() {
               <Tab
                 label={
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <span>🤖 AI Agent Queue</span>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <SmartToyIconStaged fontSize="small" sx={{ color: 'secondary.main' }} />
+                      <span>AI Agent Queue</span>
+                    </Stack>
                     {pendingAI.length > 0 && (
                       <Chip label={pendingAI.length} size="small" color="warning" />
                     )}

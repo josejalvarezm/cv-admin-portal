@@ -17,8 +17,10 @@ import {
   FormControlLabel,
   Typography,
   CircularProgress,
+  Stack,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
+import { ListOutlined as ListIcon } from '@mui/icons-material';
 import { TECHNOLOGY_LEVELS } from '@/constants';
 import type { TechnologyFormData, TechnologyCategory } from '@/types';
 
@@ -42,7 +44,12 @@ export function PortfolioDataSection({
   return (
     <Card sx={{ mb: 3 }}>
       <CardHeader
-        title="📋 Portfolio Data"
+        title={
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <ListIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h6" component="span">Portfolio Data</Typography>
+          </Stack>
+        }
         subheader="Required fields for portfolio display"
       />
       <CardContent>
