@@ -46,6 +46,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: cv-admin-portal
+          projectName: cv-admin-portal-private
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
