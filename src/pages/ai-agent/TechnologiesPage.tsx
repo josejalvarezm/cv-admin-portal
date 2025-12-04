@@ -98,18 +98,20 @@ export function AIAgentTechnologiesPage() {
           aVal = (a.category || '').toLowerCase();
           bVal = (b.category || '').toLowerCase();
           break;
-        case 'recency':
+        case 'recency': {
           const recencyOrder = { current: 3, recent: 2, legacy: 1 };
           aVal = recencyOrder[a.recency as keyof typeof recencyOrder] || 0;
           bVal = recencyOrder[b.recency as keyof typeof recencyOrder] || 0;
           break;
-        case 'hasOutcomes':
+        }
+        case 'hasOutcomes': {
           // Count how many outcome fields are filled
           const aOutcomes = (a.action ? 1 : 0) + (a.effect ? 1 : 0) + (a.outcome ? 1 : 0);
           const bOutcomes = (b.action ? 1 : 0) + (b.effect ? 1 : 0) + (b.outcome ? 1 : 0);
           aVal = aOutcomes;
           bVal = bOutcomes;
           break;
+        }
         case 'hasD1CVMatch':
           aVal = a.hasD1CVMatch ? 1 : 0;
           bVal = b.hasD1CVMatch ? 1 : 0;

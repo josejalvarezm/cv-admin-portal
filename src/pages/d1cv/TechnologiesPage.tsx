@@ -162,11 +162,12 @@ export function D1CVTechnologiesPage() {
           aVal = (a.category || '').toLowerCase();
           bVal = (b.category || '').toLowerCase();
           break;
-        case 'level':
+        case 'level': {
           const levelOrder = { Expert: 4, Advanced: 3, Intermediate: 2, Beginner: 1 };
           aVal = levelOrder[a.level as keyof typeof levelOrder] || 0;
           bVal = levelOrder[b.level as keyof typeof levelOrder] || 0;
           break;
+        }
         case 'experience_years':
           aVal = a.experience_years || 0;
           bVal = b.experience_years || 0;
