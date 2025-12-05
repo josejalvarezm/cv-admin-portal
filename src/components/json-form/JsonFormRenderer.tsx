@@ -281,7 +281,7 @@ function ArrayField({
                                     <JsonFormRenderer
                                         data={item}
                                         onChange={(newValue) => handleItemChange(index, newValue)}
-                                        path={`${label}[${index}]`}
+                                        path=""
                                         level={level + 1}
                                     />
                                 </Box>
