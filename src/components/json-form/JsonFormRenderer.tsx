@@ -183,10 +183,10 @@ function getSmartItemLabel(item: JsonValue, index: number): string {
     // For objects, look for meaningful fields
     if (typeof item === 'object' && !Array.isArray(item)) {
         const obj = item as JsonObject;
-        
+
         // Priority list of field names to use as labels
         const labelFields = ['title', 'name', 'text', 'label', 'description', 'value', 'id'];
-        
+
         for (const field of labelFields) {
             const value = obj[field];
             if (typeof value === 'string' && value.trim()) {
