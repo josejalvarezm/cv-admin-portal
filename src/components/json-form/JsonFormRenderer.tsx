@@ -162,6 +162,45 @@ function PrimitiveField({
 }
 
 /**
+ * Extracts a smart label from an array item
+ * Looks for common field names that contain meaningful content
+ */
+function getSmartItemLabel(item: JsonValue, index: number): string {
+    // For primitives, use the value directly (truncated if long)
+    if (typeof item === 'string') {
+        return item.length > 50 ? `${item.substring(0, 47)}...` : item;
+    }
+    if (typeof item === 'number') {
+        return item.toString();
+    }
+    if (typeof item === 'boolean') {
+        return item ? 'True' : 'False';
+    }
+    if (item === null) {
+        return 'Empty';
+    }
+
+    // For objects, look for meaningful fields
+    if (typeof item === 'object' && !Array.isArray(item)) {
+        const obj = item as JsonObject;
+        
+        // Priority list of field names to use as labels
+        const labelFields = ['title', 'name', 'text', 'label', 'description', 'value', 'id'];
+        
+        for (const field of labelFields) {
+            const value = obj[field];
+            if (typeof value === 'string' && value.trim()) {
+                // Truncate long values
+                return value.length > 50 ? `${value.substring(0, 47)}...` : value;
+            }
+        }
+    }
+
+    // Fallback to generic label if nothing found
+    return `Item ${index + 1}`;
+}
+
+/**
  * Renders an array of items with add/remove functionality
  */
 function ArrayField({
@@ -237,7 +276,7 @@ function ArrayField({
                                 </Tooltip>
                                 <Box sx={{ flexGrow: 1 }}>
                                     <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                                        Item {index + 1}
+                                        {getSmartItemLabel(item, index)}
                                     </Typography>
                                     <JsonFormRenderer
                                         data={item}
