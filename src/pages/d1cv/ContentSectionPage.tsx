@@ -34,9 +34,9 @@ type ViewMode = 'form' | 'json';
 
 export function ContentSectionPage() {
   const { sectionType } = useParams<{ sectionType: 'home' | 'achievements' }>();
-  
+
   const validSection = sectionType === 'home' || sectionType === 'achievements' ? sectionType : 'home';
-  
+
   const [jsonContent, setJsonContent] = useState('{\n  \n}');
   const [formData, setFormData] = useState<JsonObject>({});
   const [sectionName, setSectionName] = useState('');
@@ -72,7 +72,7 @@ export function ContentSectionPage() {
   const handleViewModeChange = useCallback(
     (_: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
       if (newMode === null) return;
-      
+
       if (newMode === 'json' && viewMode === 'form') {
         // Switching from form to JSON - update JSON string
         setJsonContent(JSON.stringify(formData, null, 2));
@@ -155,7 +155,7 @@ export function ContentSectionPage() {
 
       await updateMutation.mutateAsync(payload);
       setSuccess(`${validSection} section saved successfully.`);
-      
+
       // Keep form data in sync after save
       setFormData(contentToSave);
       setJsonContent(JSON.stringify(contentToSave, null, 2));
@@ -249,7 +249,7 @@ export function ContentSectionPage() {
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Section Metadata</Typography>
-            
+
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <TextField
                 label="Section Name"
