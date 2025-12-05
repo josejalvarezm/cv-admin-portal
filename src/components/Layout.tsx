@@ -128,7 +128,7 @@ export function Layout() {
         {/* D1CV Section */}
         <ListItem sx={{ pt: 2, pb: 0 }}>
           <Typography variant="overline" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <StorageIcon fontSize="small" /> D1CV (Portfolio)
+            <StorageIcon fontSize="small" /> DB CV (Portfolio)
           </Typography>
         </ListItem>
         {NAV_ITEMS.filter(item => item.section === 'D1CV (Portfolio)').map((item) => (
