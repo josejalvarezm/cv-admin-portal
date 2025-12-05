@@ -20,11 +20,14 @@ import {
 import { Save as SaveIcon, Delete as DeleteIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@services/api';
+import { useVectorizeStatus } from '@hooks/useAIAgent';
 
 export function SettingsPage() {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [reindexDialogOpen, setReindexDialogOpen] = useState(false);
   const [resultMessage, setResultMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const { refetch: refreshPortfolioCache } = useVectorizeStatus();
 
   const clearStagedMutation = useMutation({
     mutationFn: () => apiClient.delete<{ deleted?: { d1cv: number; ai: number } }>('/api/staged'),
@@ -152,6 +155,23 @@ export function SettingsPage() {
                   onClick={() => setClearDialogOpen(true)}
                 >
                   Clear Staged
+                </Button>
+              </Box>
+              <Divider />
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Refresh Portfolio Cache
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Refresh the cached AI Agent index status.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<RefreshIcon />}
+                  onClick={() => refreshPortfolioCache()}
+                >
+                  Refresh Cache
                 </Button>
               </Box>
               <Divider />

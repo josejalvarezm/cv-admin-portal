@@ -31,7 +31,6 @@ import {
   Work as WorkIcon,
   Tune as TuneIcon,
   School as SchoolIcon,
-  Hub as VectorizeIcon,
   Person as PersonIcon,
   ContactMail as ContactIcon,
   Home as HomeIcon,
@@ -63,7 +62,6 @@ const NAV_ITEMS: NavItem[] = [
   { text: 'Achievements', icon: <AchievementsIcon />, path: '/d1cv/sections/achievements', section: 'D1CV (Portfolio)' },
   // AI Agent Section  
   { text: 'Technologies', icon: <CodeIcon />, path: '/ai-agent/technologies', section: 'AI Agent' },
-  { text: 'Vectorize', icon: <VectorizeIcon />, path: '/ai-agent/vectorize', section: 'AI Agent' },
   // Staging & Settings
   { text: 'Staged Changes', icon: <SyncIcon />, path: '/staged', showBadge: true },
   { text: 'Commits', icon: <CommitIcon />, path: '/commits' },
