@@ -2,10 +2,10 @@
  * D1CV Content Section Page
  * 
  * Edit JSON-based content sections (home, achievements).
- * Uses a JSON editor for flexible content editing.
+ * Provides both a form view (user-friendly) and JSON view (advanced).
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Box,
@@ -17,13 +17,20 @@ import {
   Stack,
   Alert,
   CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   Refresh as RefreshIcon,
   Code as CodeIcon,
+  ViewList as FormIcon,
 } from '@mui/icons-material';
 import { useD1CVSection, useUpdateContentSection, type ContentSectionInput } from '@hooks/useD1CV';
+import { JsonFormRenderer, type JsonObject } from '@components/json-form';
+
+type ViewMode = 'form' | 'json';
 
 export function ContentSectionPage() {
   const { sectionType } = useParams<{ sectionType: 'home' | 'achievements' }>();
@@ -31,11 +38,13 @@ export function ContentSectionPage() {
   const validSection = sectionType === 'home' || sectionType === 'achievements' ? sectionType : 'home';
   
   const [jsonContent, setJsonContent] = useState('{\n  \n}');
+  const [formData, setFormData] = useState<JsonObject>({});
   const [sectionName, setSectionName] = useState('');
   const [displayOrder, setDisplayOrder] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('form');
 
   const { data, isLoading, refetch } = useD1CVSection(validSection);
   const updateMutation = useUpdateContentSection(validSection);
@@ -46,15 +55,49 @@ export function ContentSectionPage() {
   useEffect(() => {
     if (data) {
       try {
-        setJsonContent(JSON.stringify(data.json_content, null, 2));
+        const content = data.json_content || {};
+        setJsonContent(JSON.stringify(content, null, 2));
+        setFormData(content as JsonObject);
         setSectionName(data.section_name || '');
         setDisplayOrder(data.display_order || 0);
         setJsonError(null);
       } catch {
         setJsonContent('{}');
+        setFormData({});
       }
     }
   }, [data]);
+
+  // Sync form data to JSON when switching to JSON view
+  const handleViewModeChange = useCallback(
+    (_: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
+      if (newMode === null) return;
+      
+      if (newMode === 'json' && viewMode === 'form') {
+        // Switching from form to JSON - update JSON string
+        setJsonContent(JSON.stringify(formData, null, 2));
+        setJsonError(null);
+      } else if (newMode === 'form' && viewMode === 'json') {
+        // Switching from JSON to form - parse and update form data
+        try {
+          const parsed = JSON.parse(jsonContent);
+          setFormData(parsed);
+          setJsonError(null);
+        } catch {
+          setError('Cannot switch to Form view: JSON has syntax errors. Please fix them first.');
+          return; // Don't switch mode
+        }
+      }
+      setViewMode(newMode);
+    },
+    [viewMode, formData, jsonContent]
+  );
+
+  // Handle form data changes
+  const handleFormDataChange = useCallback((newData: unknown) => {
+    setFormData(newData as JsonObject);
+    setSuccess(null);
+  }, []);
 
   const validateJson = (text: string): boolean => {
     try {
@@ -89,22 +132,33 @@ export function ContentSectionPage() {
     setError(null);
     setSuccess(null);
 
-    if (!validateJson(jsonContent)) {
-      setError('Please fix JSON syntax errors before saving.');
-      return;
+    let contentToSave: JsonObject;
+
+    if (viewMode === 'json') {
+      // Validate and parse JSON
+      if (!validateJson(jsonContent)) {
+        setError('Please fix JSON syntax errors before saving.');
+        return;
+      }
+      contentToSave = JSON.parse(jsonContent);
+    } else {
+      // Use form data directly
+      contentToSave = formData;
     }
 
     try {
-      const parsedContent = JSON.parse(jsonContent);
-      
       const payload: ContentSectionInput = {
         section_name: sectionName.trim() || undefined,
-        json_content: parsedContent,
+        json_content: contentToSave,
         display_order: displayOrder,
       };
 
       await updateMutation.mutateAsync(payload);
       setSuccess(`${validSection} section saved successfully.`);
+      
+      // Keep form data in sync after save
+      setFormData(contentToSave);
+      setJsonContent(JSON.stringify(contentToSave, null, 2));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save section');
     }
@@ -149,9 +203,34 @@ export function ContentSectionPage() {
             {getSectionDescription()}
           </Typography>
         </Box>
-        <Button startIcon={<RefreshIcon />} onClick={() => refetch()}>
-          Refresh
-        </Button>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={handleViewModeChange}
+            size="small"
+          >
+            <ToggleButton value="form">
+              <Tooltip title="Form View (Recommended)">
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <FormIcon fontSize="small" />
+                  <Typography variant="body2">Form</Typography>
+                </Stack>
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="json">
+              <Tooltip title="JSON View (Advanced)">
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <CodeIcon fontSize="small" />
+                  <Typography variant="body2">JSON</Typography>
+                </Stack>
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Button startIcon={<RefreshIcon />} onClick={() => refetch()}>
+            Refresh
+          </Button>
+        </Stack>
       </Stack>
 
       {error && (
@@ -192,42 +271,65 @@ export function ContentSectionPage() {
 
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <CodeIcon color="primary" />
-                <Typography variant="h6">JSON Content</Typography>
-              </Stack>
-              <Button size="small" onClick={handleFormatJson}>
-                Format JSON
-              </Button>
-            </Stack>
+            {viewMode === 'form' ? (
+              <>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+                  <FormIcon color="primary" />
+                  <Typography variant="h6">Content Editor</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    — Edit fields directly below
+                  </Typography>
+                </Stack>
 
-            {jsonError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                JSON Error: {jsonError}
-              </Alert>
+                <JsonFormRenderer
+                  data={formData}
+                  onChange={handleFormDataChange}
+                />
+
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                  Tip: Use the JSON view for bulk editing or advanced changes.
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <CodeIcon color="primary" />
+                    <Typography variant="h6">JSON Content</Typography>
+                  </Stack>
+                  <Button size="small" onClick={handleFormatJson}>
+                    Format JSON
+                  </Button>
+                </Stack>
+
+                {jsonError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    JSON Error: {jsonError}
+                  </Alert>
+                )}
+
+                <TextField
+                  value={jsonContent}
+                  onChange={handleJsonChange}
+                  multiline
+                  rows={20}
+                  fullWidth
+                  error={!!jsonError}
+                  sx={{
+                    fontFamily: 'monospace',
+                    '& .MuiInputBase-input': {
+                      fontFamily: 'monospace',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  placeholder='{\n  "key": "value"\n}'
+                />
+
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Edit the JSON content directly. Use "Format JSON" to auto-format.
+                </Typography>
+              </>
             )}
-
-            <TextField
-              value={jsonContent}
-              onChange={handleJsonChange}
-              multiline
-              rows={20}
-              fullWidth
-              error={!!jsonError}
-              sx={{
-                fontFamily: 'monospace',
-                '& .MuiInputBase-input': {
-                  fontFamily: 'monospace',
-                  fontSize: '0.875rem',
-                },
-              }}
-              placeholder='{\n  "key": "value"\n}'
-            />
-
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Edit the JSON content directly. Use "Format JSON" to auto-format.
-            </Typography>
           </CardContent>
         </Card>
 
@@ -236,7 +338,7 @@ export function ContentSectionPage() {
             type="submit"
             variant="contained"
             startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />}
-            disabled={isSaving || !!jsonError}
+            disabled={isSaving || (viewMode === 'json' && !!jsonError)}
           >
             {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
